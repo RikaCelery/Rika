@@ -13,3 +13,11 @@ repositories {
     maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
+dependencies {
+    compileOnly("net.mamoe:mirai-core-utils:2.12.1")
+    implementation("xyz.cssxsh.pixiv:pixiv-client:1.2.3")
+    implementation("org.seleniumhq.selenium:selenium-java:4.4.0")
+    implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.4.0")
+    implementation("commons-codec:commons-codec:1.15")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
+}
