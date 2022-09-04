@@ -21,9 +21,9 @@ interface Limitable {
         // 权限管理(黑白名单)
         var blockMode = Hashtable<String, MutableMap<Long, CommandBlockMode>>()
         var blackListSubject = Hashtable<String, MutableList<Long>>()
-        var blackListUser = Hashtable<String, MutableMap<Long, List<Long>>>()
+        var blackListSubjectToUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
         var whiteListSubject = Hashtable<String, MutableList<Long>>()
-        var whiteListUser = Hashtable<String, MutableMap<Long, List<Long>>>()
+        var whiteListUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
 
         // 调用限制信息
         var callCountLimitMap = Hashtable<String, Int>()
@@ -231,7 +231,40 @@ interface Limitable {
         return defultCountLimit
     }
 
-
+    fun addBlackUserGlobal(userId: Long): Boolean {
+        return addBlackUserInGroup(0,userId)
+    }
+    fun removeBlackUserGlobal(userId: Long): Boolean {
+        return removeBlackUserInGroup(0,userId)
+    }
+    fun addBlackUserInGroup(groupId:Long,userId: Long): Boolean {
+        if (blackListSubjectToUser[commandId]==null){
+            blackListSubjectToUser[commandId] = mutableMapOf()
+        }
+        if (blackListSubjectToUser[commandId]!![groupId]==null){
+            blackListSubjectToUser[commandId]!![groupId]= mutableListOf()
+        }
+        return if (userId in blackListSubjectToUser[commandId]!![groupId]!!)
+            false
+        else{
+            blackListSubjectToUser[commandId]!![groupId]!!.add(userId)
+            true
+        }
+    }
+    fun removeBlackUserInGroup(groupId:Long,userId: Long): Boolean {
+        if (blackListSubjectToUser[commandId]==null){
+            blackListSubjectToUser[commandId] = mutableMapOf()
+        }
+        if (blackListSubjectToUser[commandId]!![groupId]==null){
+            blackListSubjectToUser[commandId]!![groupId]= mutableListOf()
+        }
+        return if (userId !in blackListSubjectToUser[commandId]!![groupId]!!)
+            false
+        else{
+            blackListSubjectToUser[commandId]!![groupId]!!.remove(userId)
+            true
+        }
+    }
     fun addCall(call: Call): Boolean {
         callHistory[call.commandId]?.add(call) ?: kotlin.run {
             callHistory[call.commandId] = mutableListOf(call)
@@ -387,7 +420,7 @@ interface Limitable {
     }
 
     fun blackListGroupUserCheck(call: Call): Boolean {
-        if (call.userId in (blackListUser[call.commandId]?.get(call.subjectId) ?: mutableListOf())) {
+        if (call.userId in (blackListSubjectToUser[call.commandId]?.get(call.subjectId) ?: mutableListOf())) {
             Rika.logger.debug("blackListGroupUserCheck failed.")
             return false
         }
@@ -395,7 +428,7 @@ interface Limitable {
     }
 
     fun blackListGlobalUserCheck(call: Call): Boolean {
-        if (call.userId in (blackListUser[call.commandId]?.get(0) ?: mutableListOf())) {
+        if (call.userId in (blackListSubjectToUser[call.commandId]?.get(0) ?: mutableListOf())) {
             Rika.logger.debug("blackListGlobalUserCheck failed.")
             return false
         }

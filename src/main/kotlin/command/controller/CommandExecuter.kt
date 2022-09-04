@@ -95,7 +95,7 @@ object CommandExecuter : SimpleListenerHost() {
                 eventCommand.addCall(call)
             }
             is Faild -> {
-                logger.error("exception happened when executing $call caused by ${result.exception}.")
+                logger.error("exception happened when executing $call caused by ${result.exception}.${result.exception?.stackTraceToString()?.let { "\n$it" }}")
             }
             is Ignored -> {
                 logger.debug("ignore reason: ${result.reason}.")
@@ -104,7 +104,7 @@ object CommandExecuter : SimpleListenerHost() {
                 logger.warning("unkown status, not add.")
             }
             is Error -> {
-                logger.error("internal error happened when executing $call caused by ${result.cause}.")
+                logger.error("internal error happened when executing $call caused by ${result.cause}.${result.cause?.stackTraceToString()?.let { "\n$it" }}")
             }
         }
     }

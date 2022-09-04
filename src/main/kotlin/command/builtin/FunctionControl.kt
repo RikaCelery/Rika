@@ -1,18 +1,19 @@
 package org.celery.command.builtin
 
 import com.example.events.ExecutionResult
-import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.ConsoleCommandSender
 import net.mamoe.mirai.console.command.SimpleCommand
 import net.mamoe.mirai.console.util.safeCast
 import net.mamoe.mirai.contact.NormalMember
 import net.mamoe.mirai.contact.isOperator
-import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 
+/**
+ * 开关某个指令
+ */
 object FunctionCallControl: RegexCommand(
     "功能开关",
     "(开启|关闭)\\s*(.+)".toRegex(),
@@ -61,6 +62,10 @@ object FunctionCallControl: RegexCommand(
         return ExecutionResult.Success()
     }
 }
+
+/**
+ * 开某个指令(控制台)
+ */
 object ConsoleFunctionCallControlEnable: SimpleCommand(
     Rika,"开启",description = "指令开关,用于控制台使用"
 ){
@@ -72,6 +77,10 @@ object ConsoleFunctionCallControlEnable: SimpleCommand(
         sendMessage("OK")
     }
 }
+
+/**
+ * 关某个指令(控制台)
+ */
 object ConsoleFunctionCallControlDisable: SimpleCommand(
     Rika,"关闭", description = "指令开关,用于控制台使用"
 ){
