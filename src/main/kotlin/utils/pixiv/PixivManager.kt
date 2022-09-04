@@ -1,6 +1,6 @@
 package com.celery.rika.utils.pixiv
 
-import com.celery.rika.exceptions.PixivException
+import exceptions.PixivException
 import com.celery.rika.utils.sql.PixivSql
 import com.celery.rika.utils.sql.PixivSql.illusts
 import com.celery.rika.utils.sql.insertOrUpdate

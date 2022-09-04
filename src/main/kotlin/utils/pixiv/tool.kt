@@ -1,12 +1,12 @@
 package pixivClient
 
-import com.celery.com.celery.rika.Rika
 import com.celery.rika.utils.pixiv.MyPixivDownloader
 import com.celery.rika.utils.pixiv.PixivManager.saveAll
 import com.celery.rika.utils.sql.insertOrUpdate
 import io.ktor.http.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import org.celery.Rika
 import xyz.cssxsh.pixiv.SearchTarget
 import xyz.cssxsh.pixiv.apps.IllustInfo
 import xyz.cssxsh.pixiv.apps.searchIllust

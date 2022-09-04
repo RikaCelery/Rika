@@ -1,6 +1,6 @@
 package com.celery.rika.utils.file
 
-import com.celery.com.celery.rika.Rika
+import org.celery.Rika
 import org.apache.commons.codec.binary.Hex
 import java.io.File
 import java.security.MessageDigest

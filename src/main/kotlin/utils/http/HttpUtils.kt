@@ -34,7 +34,7 @@ object HttpUtils {
         caches.clear()
     }
 
-    private val cache = Cache(FileTools.newTempFile(), 10 * 1024 * 1024)
+    private val cache = Cache(FileTools.creatTempFile(), 10 * 1024 * 1024)
 
     object MyCookieJar : CookieJar {
 

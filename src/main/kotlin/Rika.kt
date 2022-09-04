@@ -27,6 +27,7 @@ object Rika : KotlinPlugin(
         author("Celery")
     }
 ) {
+    val DEBUG_MODE: Boolean = true
     val allRegisterdCommand:HashSet<CCommand> = hashSetOf()
     override fun onEnable() {
         //internal

@@ -1,9 +1,9 @@
 package com.celery.rika.utils.pixiv
 
-import com.celery.com.celery.rika.Rika
-import com.celery.rika.config.main.ProxyConfigs
 import io.ktor.http.*
 import net.mamoe.mirai.utils.MiraiLogger
+import org.celery.Rika
+import org.celery.config.main.ProxyConfigs
 import xyz.cssxsh.pixiv.tool.PixivDownloader
 import java.net.InetSocketAddress
 import java.net.Proxy

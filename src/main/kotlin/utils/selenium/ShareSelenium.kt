@@ -1,6 +1,5 @@
 package com.celery.rika.utils.selenium
 
-import com.celery.rika.commands.builtin.HelpCommand
 import com.celery.rika.utils.file.FileTools
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import java.io.File
