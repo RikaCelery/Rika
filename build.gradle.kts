@@ -13,3 +13,7 @@ repositories {
     maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
+dependencies {
+    implementation("org.seleniumhq.selenium:selenium-java:4.4.0")
+    implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.4.0")
+}
