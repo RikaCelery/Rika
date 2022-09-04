@@ -53,6 +53,7 @@ data class CommandBasicUsage(
     val commandNameDisplay: String,
     val params: List<CommandUsage.CommandParam>,
     val description: String,
+    val superUserUsage: String,
     val example: String,
     val commandId: String
 )

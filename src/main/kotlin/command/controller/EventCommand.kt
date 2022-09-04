@@ -22,12 +22,12 @@ import kotlin.reflect.full.*
 
 @OptIn(ExperimentalStdlibApi::class)
 abstract class EventCommand<E : BotEvent>(
-    open val commandName: String,
+    override val commandId: String,
     open val regex: Regex? = null,
     open val description: String = "",
     open val example: String = "",
     open val blockMode: CommandBlockMode = CommandBlockMode.BLACKLIST
-) : Limitable, CommandInfo, CoroutineScope {
+) : CCommand, CoroutineScope {
     open val logger = MiraiLogger.Factory.create(this::class)
     override val coroutineContext: CoroutineContext = EmptyCoroutineContext + SupervisorJob()
 
@@ -40,8 +40,6 @@ abstract class EventCommand<E : BotEvent>(
     }
 
     override var defultEnable: Boolean = true
-    override val commandId: String
-        get() = commandName
     override var defultCallCountLimitMode: BlockRunMode = BlockRunMode.User
     override var defultCountLimit: Int = 10
     override var defultMinCooldown: Int = 5000
@@ -138,11 +136,12 @@ abstract class EventCommand<E : BotEvent>(
     override fun getUsages(): List<CommandBasicUsage> {
         return listOf(
             CommandBasicUsage(
-                commandNameDisplay = commandName + " (监听器)",
+                commandNameDisplay = commandId + " (监听器)",
                 params = listOf(),
                 description = description,
+                superUserUsage = "",
                 example = example,
-                commandId = commandName
+                commandId = commandId
             )
         )
     }
@@ -172,16 +171,16 @@ private fun Contact.isSuperUser(): Boolean {
  * @param normalUsage 用户使用时应该输入的指令前缀
  */
 abstract class RegexCommand(
-    override val commandName: String,
+    override val commandId: String,
     override val regex: Regex,
     open val normalUsage: String = "(触发正则表达式: ${regex.pattern})",
     open val params: List<CommandUsage.CommandParam> = listOf(),
     override val description: String = "",
     override val example: String = "",
     override val blockMode: CommandBlockMode = CommandBlockMode.BLACKLIST
-) : EventCommand<MessageEvent>(commandName, regex, description, example, blockMode) {
+) : EventCommand<MessageEvent>(commandId, regex, description, example, blockMode) {
     override fun getUsages(): List<CommandBasicUsage> {
-        return listOf(CommandBasicUsage(commandName + ": " + normalUsage, params, description, example, commandName))
+        return listOf(CommandBasicUsage(commandId + ": " + normalUsage, params, description, "", example, commandId))
     }
 
     @Matcher

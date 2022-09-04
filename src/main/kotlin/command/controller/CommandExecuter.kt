@@ -21,7 +21,7 @@ event -> findMatch( Command.matches(event)!=null ) -> ExecutionEvent -> execute
  */
 object CommandExecuter : SimpleListenerHost() {
     private val logger = Rika.logger
-    private val commands = mutableListOf<EventCommand<*>>()
+    private val commands = hashSetOf<EventCommand<*>>()
     fun add(c: EventCommand<*>) = commands.add(c)
 
     /**
@@ -118,11 +118,11 @@ object CommandExecuter : SimpleListenerHost() {
     @EventHandler
     suspend fun MessageEvent.listen() {
         for (cmd in commands) {
-//            println(cmd.commandName)
+//            println(cmd.commandId)
             val matches = cmd.matches(this@listen)
             if (matches != null) {
-                logger.debug("find match: ${cmd.commandName}")
-                val call = Call(cmd.commandName, sender.id, subject.id)
+                logger.debug("find match: ${cmd.commandId}")
+                val call = Call(cmd.commandId, sender.id, subject.id)
                 if (!cmd.canCall(call))
                     continue
                 launch {

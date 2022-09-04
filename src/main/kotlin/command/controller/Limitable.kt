@@ -7,6 +7,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import org.celery.Rika
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
  * 根据[commandId]控制调用频率和调用次数
@@ -15,7 +16,8 @@ interface Limitable {
     companion object {
         //调用历史记录
         var callHistory = Hashtable<String, MutableList<Call>>()
-
+        // 暂时关闭的群
+        var tempDisable = ConcurrentLinkedDeque<Long>()
         // 权限管理(黑白名单)
         var blockMode = Hashtable<String, MutableMap<Long, CommandBlockMode>>()
         var blackListSubject = Hashtable<String, MutableList<Long>>()
@@ -168,6 +170,21 @@ interface Limitable {
             }
             return hashtable
         }
+    }
+
+    fun disableFor(subject:Long): Boolean {
+        if (tempDisable.contains(subject))
+            return false
+        return  tempDisable.add(subject)
+    }
+    fun enbaleFor(subject:Long): Boolean {
+        return(tempDisable.remove(subject))
+    }
+    fun disable(){
+        defultEnable = false
+    }
+    fun enable(){
+        defultEnable = true
     }
 
     /**
