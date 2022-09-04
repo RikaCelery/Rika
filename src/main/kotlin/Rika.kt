@@ -8,6 +8,7 @@ import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.registerTo
 import net.mamoe.mirai.utils.info
+import org.celery.command.builtin.AddBlackList
 import org.celery.command.builtin.ConsoleFunctionCallControlDisable
 import org.celery.command.builtin.ConsoleFunctionCallControlEnable
 import org.celery.command.builtin.FunctionCallControl
@@ -34,6 +35,7 @@ object Rika : KotlinPlugin(
         ConsoleFunctionCallControlEnable.register()
         ConsoleFunctionCallControlDisable.register()
         FunctionCallControl.reg()
+        AddBlackList.reg()
         //common
         Test().reg()
         AA.register()

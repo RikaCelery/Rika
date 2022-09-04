@@ -147,6 +147,5 @@ package org.celery.command.temp//package com.example.command
 //    override var enable: Boolean = true
 //    override lateinit var blockMode: Hashtable<Long, Command.CommandBlockMode>
 //    override suspend fun CommandSender.execute(block: suspend CommandSender.() -> Any) {
-//        TODO("Not yet implemented")
 //    }
 //}
