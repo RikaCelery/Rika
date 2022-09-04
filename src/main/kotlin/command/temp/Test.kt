@@ -1,5 +1,6 @@
 package org.celery.command.temp
 
+import com.celery.rika.utils.http.HttpUtils
 import com.example.events.ExecutionResult
 import org.celery.command.controller.RegexCommand
 import net.mamoe.mirai.event.events.MessageEvent

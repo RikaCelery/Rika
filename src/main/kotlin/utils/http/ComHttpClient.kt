@@ -1,6 +1,6 @@
 //
 //import com.celery.Plugin
-//import com.celery.com.celery.rika.Rika
+//import org.celery.rika.Rika
 //import com.celery.functions.newTempFile
 //import com.celery.httpUnits.TrustAllManager
 //import com.celery.utils.HttpUtils

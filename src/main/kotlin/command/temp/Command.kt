@@ -1,6 +1,6 @@
 package org.celery.command.temp//package com.example.command
 //
-//import com.celery.com.celery.rika.Rika
+//import org.celery.rika.Rika
 //import com.example.command.Command.CommandBlockMode.*
 //import com.example.command.Command.Permission.*
 //import com.celery.rika.config.main.MainConfig

@@ -1,6 +1,6 @@
 package pixivClient
 
-import com.celery.com.celery.rika.Rika
+import org.celery.rika.Rika
 import com.celery.rika.utils.pixiv.MyPixivDownloader
 import com.celery.rika.utils.pixiv.PixivManager.saveAll
 import com.celery.rika.utils.sql.insertOrUpdate

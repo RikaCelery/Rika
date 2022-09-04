@@ -1,6 +1,6 @@
 package com.celery.rika.utils.pixiv
 
-import com.celery.com.celery.rika.Rika
+import org.celery.rika.Rika
 import com.celery.rika.config.main.ProxyConfigs
 import io.ktor.http.*
 import net.mamoe.mirai.utils.MiraiLogger

@@ -1,6 +1,6 @@
 package com.celery.rika.utils.commandline
 
-import com.celery.com.celery.rika.Rika
+import org.celery.Rika
 import java.io.File
 import java.util.concurrent.TimeUnit
 
