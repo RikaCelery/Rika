@@ -1,6 +1,6 @@
 package com.celery.rika.utils.group
 
-import com.celery.com.celery.rika.Rika
+import org.celery.Rika
 import com.celery.rika.exceptions.DuplicateFileException
 import com.celery.rika.exceptions.GroupSpaceFullException
 import com.celery.rika.exceptions.SecurityCheckFailed
