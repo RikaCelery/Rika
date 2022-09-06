@@ -1,8 +1,8 @@
-package com.celery.rika.utils.sql
+package org.celery.utils.sql
 
-import com.celery.rika.utils.file.md5
-import com.celery.rika.utils.group.truncate
-import com.celery.rika.utils.http.HttpUtils
+import org.celery.utils.file.md5
+import org.celery.utils.group.truncate
+import org.celery.utils.http.HttpUtils
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay

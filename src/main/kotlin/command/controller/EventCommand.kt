@@ -1,6 +1,6 @@
 package org.celery.command.controller
 
-import com.example.events.ExecutionResult
+import events.ExecutionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import net.mamoe.mirai.console.util.safeCast

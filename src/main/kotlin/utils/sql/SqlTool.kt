@@ -1,8 +1,8 @@
-package com.celery.rika.utils.sql
+package org.celery.utils.sql
 
-import com.celery.rika.utils.pixiv.serializeTagInfoToString
-import com.celery.rika.utils.pixiv.serializeToJson
-import com.celery.rika.utils.sql.PixivSql.illusts
+import org.celery.utils.pixiv.serializeTagInfoToString
+import org.celery.utils.pixiv.serializeToJson
+import org.celery.utils.sql.PixivSql.illusts
 import org.ktorm.entity.add
 import org.ktorm.entity.update
 import xyz.cssxsh.pixiv.AgeLimit

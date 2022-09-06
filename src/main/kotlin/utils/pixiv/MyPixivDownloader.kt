@@ -1,4 +1,4 @@
-package com.celery.rika.utils.pixiv
+package org.celery.utils.pixiv
 
 import io.ktor.http.*
 import net.mamoe.mirai.utils.MiraiLogger

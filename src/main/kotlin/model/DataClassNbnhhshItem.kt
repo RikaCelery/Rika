@@ -1,4 +1,4 @@
-package com.celery.rika.model
+package model
 
 @kotlinx.serialization.Serializable
 data class DataClassNbnhhshItem(

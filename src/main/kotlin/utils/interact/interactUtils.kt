@@ -1,4 +1,4 @@
-package com.celery.rika.utils.interact
+package org.celery.utils.interact
 
 import kotlinx.coroutines.delay
 import net.mamoe.mirai.console.command.CommandSenderOnMessage

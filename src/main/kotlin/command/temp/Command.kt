@@ -4,8 +4,8 @@ package org.celery.command.temp//package com.example.command
 //import com.example.command.Command.CommandBlockMode.*
 //import com.example.command.Command.Permission.*
 //import com.celery.rika.config.main.MainConfig
-//import com.celery.rika.utils.permission.isSuperUser
-//import com.celery.rika.utils.time.TimeUtils
+//import org.celery.utils.permission.isSuperUser
+//import org.celery.utils.time.TimeUtils
 //import kotlinx.coroutines.runBlocking
 //import net.mamoe.mirai.console.command.*
 //import net.mamoe.mirai.console.command.Command

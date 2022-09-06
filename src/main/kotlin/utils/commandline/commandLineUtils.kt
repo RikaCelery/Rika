@@ -1,4 +1,4 @@
-package com.celery.rika.utils.commandline
+package org.celery.utils.commandline
 
 import org.celery.Rika
 import java.io.File

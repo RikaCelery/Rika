@@ -1,8 +1,8 @@
-package pixivClient
+package org.celery.utils.pixiv.pixivClient
 
-import com.celery.rika.model.EditThisCookie
-import com.celery.rika.model.toCookie
-import configData.ConfigData
+import model.EditThisCookie
+import model.toCookie
+import config.pixiv.config.ConfigData
 import io.ktor.client.network.sockets.*
 import io.ktor.client.statement.*
 import io.ktor.util.*

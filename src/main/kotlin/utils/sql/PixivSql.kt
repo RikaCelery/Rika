@@ -1,6 +1,6 @@
-package com.celery.rika.utils.sql
+package org.celery.utils.sql
 
-import configData.ConfigData
+import config.pixiv.config.ConfigData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

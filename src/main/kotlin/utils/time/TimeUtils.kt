@@ -1,4 +1,4 @@
-package com.celery.rika.utils.time
+package org.celery.utils.time
 
 import java.time.LocalDateTime
 import java.time.ZoneOffset

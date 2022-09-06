@@ -1,7 +1,7 @@
-package com.celery.rika.model
+package model
 
 
-import com.celery.rika.utils.http.HttpUtils.downloader
+import org.celery.utils.http.HttpUtils.downloader
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.mamoe.mirai.contact.Contact

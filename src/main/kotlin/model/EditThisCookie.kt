@@ -1,4 +1,4 @@
-package com.celery.rika.model
+package model
 
 import io.ktor.http.*
 import io.ktor.util.date.*

@@ -1,4 +1,4 @@
-package com.celery.rika.data
+package data
 
 import kotlinx.serialization.modules.SerializersModule
 import net.mamoe.mirai.console.data.AutoSavePluginData

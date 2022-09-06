@@ -1,4 +1,4 @@
-package com.celery.rika.utils.time
+package org.celery.utils.time
 
 object TimeConsts {
     const val YEAR = 60 * 60 * 24 * 365

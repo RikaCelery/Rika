@@ -1,6 +1,7 @@
-package com.celery.rika.utils.group
+package org.celery.utils.group
 
 import net.mamoe.mirai.contact.*
+import org.celery.Rika
 
 /**
  * @author laolittle
@@ -14,21 +15,22 @@ object GroupTools {
      * @param msg 传入的消息[String]
      * @return User if only one is found null otherwise
      * */
-    suspend fun Contact.getUserOrNull(msg: String): User? {
+    fun getUserOrNull(group: Contact,msg: String): User? {
+        Rika.logger.debug(msg)
         val noneAt = msg.replace("@", "")
         if (noneAt.isBlank()) {
             return null
         }
         return if (noneAt.contains(Regex("""\D"""))) {
-            when (this) {
-                is Group -> this.findMemberOrNull(noneAt)
+            when (group) {
+                is Group -> group.findMemberOrNull(noneAt)
                 else -> null
             }
         } else {
             val number = noneAt.toLong()
-            when (this) {
-                is Group -> this[number]
-                else -> bot.getFriend(number) ?: bot.getStranger(number)
+            when (group) {
+                is Group -> group[number]
+                else -> group.bot.getFriend(number) ?: group.bot.getStranger(number)
             }
         }
     }

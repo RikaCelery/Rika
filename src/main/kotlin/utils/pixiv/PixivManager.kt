@@ -1,18 +1,18 @@
-package com.celery.rika.utils.pixiv
+package org.celery.utils.pixiv
 
 import exceptions.PixivException
-import com.celery.rika.utils.sql.PixivSql
-import com.celery.rika.utils.sql.PixivSql.illusts
-import com.celery.rika.utils.sql.insertOrUpdate
-import com.celery.rika.utils.sql.update
-import configData.ConfigData
+import org.celery.utils.sql.PixivSql
+import org.celery.utils.sql.PixivSql.illusts
+import org.celery.utils.sql.insertOrUpdate
+import org.celery.utils.sql.update
+import config.pixiv.config.ConfigData
 import io.ktor.utils.io.*
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.utils.MiraiLogger
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.or
 import org.ktorm.entity.find
-import pixivClient.PixivClientPool
+import org.celery.utils.pixiv.pixivClient.PixivClientPool
 import xyz.cssxsh.pixiv.*
 import xyz.cssxsh.pixiv.apps.*
 import xyz.cssxsh.pixiv.exception.AppApiException

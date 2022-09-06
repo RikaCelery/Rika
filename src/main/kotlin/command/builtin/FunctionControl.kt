@@ -1,6 +1,6 @@
 package org.celery.command.builtin
 
-import com.example.events.ExecutionResult
+import events.ExecutionResult
 import net.mamoe.mirai.console.command.ConsoleCommandSender
 import net.mamoe.mirai.console.command.SimpleCommand
 import net.mamoe.mirai.console.util.safeCast
@@ -10,6 +10,7 @@ import net.mamoe.mirai.event.events.MessageEvent
 import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
+import org.ktorm.dsl.eq
 
 /**
  * 开关某个指令
@@ -22,7 +23,7 @@ object FunctionCallControl: RegexCommand(
     @Command
     suspend fun MessageEvent.handle(matchResult: EventMatchResult): ExecutionResult {
         val mode = matchResult.getResult().groupValues[1]
-        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId==matchResult.getResult().groupValues[2] }
+        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId.equals(matchResult.getResult().groupValues[2],true) }
             ?: return ExecutionResult.Ignored("command not found.")
         when(mode){
             "开启"->{
@@ -71,7 +72,7 @@ object ConsoleFunctionCallControlEnable: SimpleCommand(
 ){
     @Handler
     suspend fun ConsoleCommandSender.handle(commandId:String){
-        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId==commandId }
+        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId.equals(commandId,true) }
             ?: error("command not found.")
         command.enable()
         sendMessage("OK")
@@ -86,7 +87,7 @@ object ConsoleFunctionCallControlDisable: SimpleCommand(
 ){
     @Handler
     suspend fun ConsoleCommandSender.handle(commandId:String){
-        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId==commandId }
+        val command = Rika.allRegisterdCommand.singleOrNull { it.commandId.equals(commandId,true) }
             ?: error("command not found.")
         command.disable()
         sendMessage("OK")

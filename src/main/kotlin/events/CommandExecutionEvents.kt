@@ -1,4 +1,4 @@
-package com.example.events
+package events
 
 import org.celery.command.controller.Call
 import org.celery.command.controller.EventCommand

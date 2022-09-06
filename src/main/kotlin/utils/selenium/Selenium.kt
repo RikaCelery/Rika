@@ -1,6 +1,6 @@
-package com.celery.rika.utils.selenium
+package org.celery.utils.selenium
 
-import com.celery.rika.utils.file.FileTools
+import org.celery.utils.file.FileTools
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.warning

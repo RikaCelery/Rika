@@ -7,7 +7,7 @@
  * https://github.com/mamoe/mirai/blob/dev/LICENSE
  */
 
-package com.celery.rika.utils.group
+package org.celery.utils.group
 
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
