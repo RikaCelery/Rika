@@ -1,4 +1,4 @@
-package com.celery.rika.utils.selenium
+package org.celery.utils.selenium
 
 import org.openqa.selenium.Keys
 

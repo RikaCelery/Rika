@@ -1,4 +1,4 @@
-package com.celery.rika.utils.permission
+package org.celery.utils.permission
 
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CommandSenderOnMessage

@@ -1,4 +1,4 @@
-package configData
+package config.pixiv.config
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.encodeToString

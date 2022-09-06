@@ -1,4 +1,4 @@
-package com.celery.rika.config.pixiv
+package config.pixiv
 
 import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.ValueDescription

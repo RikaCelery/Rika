@@ -1,4 +1,4 @@
-package com.celery.rika.utils
+package org.celery.utils
 
 import org.celery.Rika
 import javax.annotation.concurrent.NotThreadSafe

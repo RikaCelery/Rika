@@ -1,7 +1,7 @@
-package com.celery.rika.utils.file
+package org.celery.utils.file
 
 import org.celery.Rika
-import com.celery.rika.utils.commandline.runCommand
+import org.celery.utils.commandline.runCommand
 import kotlinx.coroutines.delay
 import net.mamoe.mirai.utils.MiraiLogger
 import java.io.File

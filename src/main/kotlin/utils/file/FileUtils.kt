@@ -1,4 +1,4 @@
-package com.celery.rika.utils.file
+package org.celery.utils.file
 
 import org.celery.Rika
 import org.apache.commons.codec.binary.Hex

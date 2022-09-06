@@ -1,11 +1,7 @@
-package com.celery.rika.utils.http
+package org.celery.utils.http
 
-import com.celery.httpUnits.TrustAllManager
-import com.celery.httpUnits.createTrustAllHostnameVerifier
-import com.celery.httpUnits.createTrustAllSSLFactory
-import com.celery.rika.utils.ProgressBar
-import com.celery.rika.utils.file.FileTools
-import com.celery.rika.utils.file.newTempFile
+import org.celery.utils.ProgressBar
+import org.celery.utils.file.FileTools
 import net.mamoe.mirai.utils.MiraiLogger
 import okhttp3.*
 import org.apache.commons.codec.binary.Hex

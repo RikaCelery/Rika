@@ -1,7 +1,6 @@
-package com.celery.rika.utils.selenium
+package org.celery.utils.selenium
 
-import com.celery.rika.utils.file.FileTools
-import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
+import org.celery.utils.file.FileTools
 import java.io.File
 
 object ShareSelenium : Selenium(false) {

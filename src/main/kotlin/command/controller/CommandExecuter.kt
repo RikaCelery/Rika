@@ -1,9 +1,9 @@
 package org.celery.command.controller
 
-import com.example.events.CommandExecutionEvent
-import com.example.events.EventCommandExecutionEvent
-import com.example.events.ExecutionResult
-import com.example.events.ExecutionResult.*
+import events.CommandExecutionEvent
+import events.EventCommandExecutionEvent
+import events.ExecutionResult
+import events.ExecutionResult.*
 import org.celery.command.controller.BlockRunMode.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

@@ -1,4 +1,4 @@
-package com.celery.httpUnits
+package org.celery.utils.http
 
 import java.security.SecureRandom
 import java.security.cert.CertificateException

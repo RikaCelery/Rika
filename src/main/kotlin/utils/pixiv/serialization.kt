@@ -1,4 +1,4 @@
-package com.celery.rika.utils.pixiv
+package org.celery.utils.pixiv
 
 import xyz.cssxsh.pixiv.PixivJson
 import xyz.cssxsh.pixiv.apps.IllustInfo

@@ -1,6 +1,6 @@
 package org.celery.command.controller
 
-import com.example.events.ExecutionResult
+import events.ExecutionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import net.mamoe.mirai.console.util.safeCast
@@ -108,6 +108,7 @@ abstract class EventCommand<E : BotEvent>(
         return null
     }
 
+
     /**
      * 通过反射拿到Command Matcher返回true时执行指令
      */
@@ -148,7 +149,7 @@ abstract class EventCommand<E : BotEvent>(
 
 }
 
-class EventMatchResult(private val result: MatchResult?) {
+class EventMatchResult(private val result: MatchResult?,private val index:Int=0) {
     @JvmName("getResult1")
     fun getResult() = result ?: error("no match result there, it's not regex match command")
     fun getAllMatches(): MutableList<String> {
@@ -159,6 +160,9 @@ class EventMatchResult(private val result: MatchResult?) {
             last = last.next()
         }
         return list
+    }
+    fun getIndexedResult(): Pair<Int, MatchResult?> {
+        return index to result
     }
 }
 
@@ -173,6 +177,7 @@ private fun Contact.isSuperUser(): Boolean {
 abstract class RegexCommand(
     override val commandId: String,
     override val regex: Regex,
+    open vararg val subRegexs:Regex = arrayOf(),
     open val normalUsage: String = "(触发正则表达式: ${regex.pattern})",
     open val params: List<CommandUsage.CommandParam> = listOf(),
     override val description: String = "",
@@ -185,6 +190,16 @@ abstract class RegexCommand(
 
     @Matcher
     open suspend fun MessageEvent.match(): EventMatchResult? {
-        return regex.find(message.content)?.let { EventMatchResult(it) }
+        val primaryMatchResult = regex.find(message.content)?.let { EventMatchResult(it,0) }
+        if (primaryMatchResult!=null)
+            return primaryMatchResult
+        var index = 1
+        var subResult: EventMatchResult?
+        for (regex in subRegexs){
+            subResult = regex.find(message.content)?.let { EventMatchResult(it, index++) }
+            if (subResult!=null)
+                return subResult
+        }
+        return null
     }
 }

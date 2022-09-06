@@ -181,9 +181,11 @@ interface Limitable {
         return(tempDisable.remove(subject))
     }
     fun disable(){
+        Rika.logger.debug("$commandId disabled.")
         defultEnable = false
     }
     fun enable(){
+        Rika.logger.debug("$commandId enabled.")
         defultEnable = true
     }
 
@@ -231,6 +233,37 @@ interface Limitable {
         return defultCountLimit
     }
 
+    fun setUserCountLimit(subject: Long, userId: Long,limit:Int){
+        if(callCountLimitSubjectToUserMap[commandId]==null)
+            callCountLimitSubjectToUserMap[commandId] = mutableMapOf()
+        if (callCountLimitSubjectToUserMap[commandId]!![subject]==null)
+            callCountLimitSubjectToUserMap[commandId]!![subject] = mutableMapOf()
+        callCountLimitSubjectToUserMap[commandId]!![subject]!![userId] = limit
+    }
+    fun getUserCountLimit(subject: Long, userId: Long): Int? {
+        if(callCountLimitSubjectToUserMap[commandId]==null)
+            callCountLimitSubjectToUserMap[commandId] = mutableMapOf()
+        if (callCountLimitSubjectToUserMap[commandId]!![subject]==null)
+            callCountLimitSubjectToUserMap[commandId]!![subject] = mutableMapOf()
+        return callCountLimitSubjectToUserMap[commandId]!![subject]!![userId]
+    }
+    fun setGroupCountLimit(subject: Long, limit:Int){
+        if(callCountLimitSubjectMap[commandId]==null)
+            callCountLimitSubjectMap[commandId] = mutableMapOf()
+        callCountLimitSubjectMap[commandId]!![subject]=limit
+    }
+    fun getGroupCountLimit(subject: Long): Int? {
+        if(callCountLimitSubjectMap[commandId]==null)
+            callCountLimitSubjectMap[commandId] = mutableMapOf()
+        return callCountLimitSubjectMap[commandId]!![subject]
+    }
+    fun setGlobalLimit(limit: Int){
+        callCountLimitMap[commandId] = limit
+    }
+    fun getGlobalLimit(): Int? {
+        return callCountLimitMap[commandId]
+    }
+
     fun addBlackUserGlobal(userId: Long): Boolean {
         return addBlackUserInGroup(0,userId)
     }
@@ -274,6 +307,10 @@ interface Limitable {
     }
 
     fun canCall(call: Call): Boolean {
+        if (tempDisable.contains(call.subjectId)){
+            Rika.logger.debug("pre check faild, command is disabled for subject(${call.subjectId}).")
+            return false
+        }
         if (!defultEnable) {
             Rika.logger.debug("pre check faild, command disabled.")
             return false
@@ -310,8 +347,10 @@ interface Limitable {
                 true
             }
         }
-        if (!globalMode)
+        if (!globalMode) {
+            Rika.logger.debug("global permission check filed.")
             return false
+        }
         val subjectMode = when (blockMode[call.commandId]?.get(call.subjectId)) {
             BLACKLIST -> {
                 blackListCheck(call)
@@ -336,6 +375,8 @@ interface Limitable {
                 false//FIXME 第一次调用没反应
             }
         }
+        if (!subjectMode)
+            Rika.logger.debug("subject permission check filed.")
         return subjectMode
     }
 
