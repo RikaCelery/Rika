@@ -120,11 +120,10 @@ abstract class EventCommand<E : BotEvent>(
             val type1 = it.parameters.getOrNull(1)?.type
             val supertypeOf = type1?.isSupertypeOf(type)
             if (supertypeOf == true) {
-                var call: Any? = null
-                if (it.parameters.size == 3)
-                    call = it.callSuspend(this, event, result)
+                val call: Any? = if (it.parameters.size == 3)
+                    it.callSuspend(this, event, result)
                 else
-                    call = it.callSuspend(this, event)
+                    it.callSuspend(this, event)
                 return call.safeCast() ?: ExecutionResult.Unknown()
             }
             return ExecutionResult.Error(IllegalStateException("$type1 is not the isSupertypeOf oof $type"))
@@ -177,7 +176,7 @@ private fun Contact.isSuperUser(): Boolean {
 abstract class RegexCommand(
     override val commandId: String,
     override val regex: Regex,
-    open vararg val subRegexs:Regex = arrayOf(),
+    open vararg val secondaryRegexs:Regex = arrayOf(),
     open val normalUsage: String = "(触发正则表达式: ${regex.pattern})",
     open val params: List<CommandUsage.CommandParam> = listOf(),
     override val description: String = "",
@@ -195,7 +194,7 @@ abstract class RegexCommand(
             return primaryMatchResult
         var index = 1
         var subResult: EventMatchResult?
-        for (regex in subRegexs){
+        for (regex in secondaryRegexs){
             subResult = regex.find(message.content)?.let { EventMatchResult(it, index++) }
             if (subResult!=null)
                 return subResult

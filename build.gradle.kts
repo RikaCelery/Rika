@@ -25,6 +25,7 @@ dependencies {
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.4.0")
     implementation("commons-codec:commons-codec:1.15")
     implementation("org.apache.commons:commons-lang3:3.12.0")
+    implementation("org.apache.commons:commons-text:1.9")
 }
 mirai {
     jvmTarget = JavaVersion.VERSION_11

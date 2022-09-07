@@ -1,11 +1,11 @@
 package org.celery.utils.http
 
-import org.celery.utils.ProgressBar
-import org.celery.utils.file.FileTools
 import net.mamoe.mirai.utils.MiraiLogger
 import okhttp3.*
 import org.apache.commons.codec.binary.Hex
 import org.celery.config.main.ProxyConfigs
+import org.celery.utils.ProgressBar
+import org.celery.utils.file.FileTools
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -74,11 +74,7 @@ object HttpUtils {
     private fun getClient() = if (ProxyConfigs.httpClientEnable) clientProxy else clientNoProxy
 
     fun downloadToFile(url: String, ext: String? = null, file: File? = null): File {
-        val file = if (file == null) {
-            FileTools.creatTempFile()
-        } else {
-            file
-        }
+        val file1 = file ?: FileTools.creatTempFile()
         val request = Request.Builder()
             .url(url)
             .addHeader("referer", "")
@@ -90,7 +86,7 @@ object HttpUtils {
         val latch = CountDownLatch(1)
         val mD5 = MessageDigest.getInstance("md5")
         var fileName: String? = null
-        var str = ""
+        var str: String
         getClient().newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 latch.countDown()
@@ -102,17 +98,16 @@ object HttpUtils {
                 try {
 
                     response.body?.byteStream()?.use {
-                        val outputStream = file.outputStream().use { outputStream ->
+                        file1.outputStream().use { outputStream ->
 
                             var len: Int
                             val total = response.body!!.contentLength()
-                            var sum = AtomicLong(0)
-                            var buffer = ByteArray(1024 * 1024)
+                            val sum = AtomicLong(0)
+                            val buffer = ByteArray(1024 * 1024)
                             val displaySize = FileTools.byteCountToDisplaySize(total)
-                            var delta = 0L
-                            var lastTime = System.currentTimeMillis()
-                            logger.info("开始向文件${file}写入数据,共${total} 字节$displaySize")
-                            var progress: Float = 1f
+                            var delta: Long
+                            logger.info("开始向文件${file1}写入数据,共${total} 字节$displaySize")
+                            var progress = 1f
                             var lastSum = 0L
                             var counter = 1
                             val progressbar = ProgressBar.build(4)
@@ -130,7 +125,7 @@ object HttpUtils {
                                     get.times(2).div(counter).toDisplaySize(),
                                     get.toDisplaySize(),
                                     displaySize,
-                                    file.name
+                                    file1.name
                                 ))
                                 logger.info(str)
                                 counter++
@@ -149,7 +144,7 @@ object HttpUtils {
                                 mD5.update(buffer, 0, len)
                             }
                             printProgress()
-                            logger.info("文件${file}写入数据完毕,共${total}字节 $displaySize")
+                            logger.info("文件${file1}写入数据完毕,共${total}字节 $displaySize")
                             fileName = Hex.encodeHex(mD5.digest()).joinToString("")
 
                         }
@@ -165,29 +160,29 @@ object HttpUtils {
 
             if (ext != null) {
                 Files.move(
-                    file.toPath(),
-                    file.parentFile.resolve(fileName!! + "." + ext).toPath(),
+                    file1.toPath(),
+                    file1.parentFile.resolve(fileName!! + "." + ext).toPath(),
                     StandardCopyOption.REPLACE_EXISTING
                 )
-                file.parentFile.resolve(fileName!! + "." + ext)
+                file1.parentFile.resolve(fileName!! + "." + ext)
             } else {
                 Files.move(
-                    file.toPath(),
-                    file.parentFile.resolve(fileName!!).toPath(),
+                    file1.toPath(),
+                    file1.parentFile.resolve(fileName!!).toPath(),
                     StandardCopyOption.REPLACE_EXISTING
                 )
-                file.parentFile.resolve(fileName!!)
+                file1.parentFile.resolve(fileName!!)
             }
 
         } else
-            file
+            file1
     }
 
     /**
      * 获取文本返回值(GET)
      */
     @Synchronized
-    fun getStringContent(url: String, proxy: Boolean = false, cache: Boolean = false): String {
+    fun getStringContent(url: String, cache: Boolean = false): String {
         println("have cache: ${caches[url] != null}")
         if (caches[url] != null && cache) {
             println("返回已缓存请求: $url")
@@ -205,7 +200,7 @@ object HttpUtils {
         var response: Response? = null
         var n = 0
         while (response == null) {
-            if (n > 20)
+            if (n > 5)
                 throw TimeoutException("尝试次数过多")
             try {
                 response = getClient().newCall(request).execute()

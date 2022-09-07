@@ -1,11 +1,13 @@
 package org.celery.command.controller
 
-import org.celery.command.controller.BlockRunMode.*
-import org.celery.command.controller.CommandBlockMode.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import org.celery.Rika
+import org.celery.command.controller.BlockRunMode.*
+import org.celery.command.controller.CommandBlockMode.*
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -50,114 +52,136 @@ interface Limitable {
          * 用于从文件中加载共用数据
          */
         fun load() {
-//          `  val callHistoryFile = Rika.configFolder.resolve("limitation/callHistory.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val defaultCallCountLimitFile = Rika.configFolder.resolve("limitation/defaultCallCountLimit.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val callLimitSubjectFile = Rika.configFolder.resolve("limitation/callLimitSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val callLimitSubjectToUserFile = Rika.configFolder.resolve("limitation/callLimitSubjectToUser.json")
-//                .apply { if `(parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockModeFile = Rika.configFolder.resolve("limitation/blockMode.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blackListSubjectFile = Rika.configFolder.resolve("limitation/blackListSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blackListUserFile = Rika.configFolder.resolve("limitation/blackListUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val whiteListSubjectFile = Rika.configFolder.resolve("limitation/whiteListSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val whiteListUserFile = Rika.configFolder.resolve("limitation/whiteListUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockRunModeFile = Rika.configFolder.resolve("limitation/blockRunMode.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockUserFile = Rika.configFolder.resolve("limitation/blockUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockSubjectFile = Rika.configFolder.resolve("limitation/blockSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockGlobalFile = Rika.configFolder.resolve("limitation/blockGlobal.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            callHistory =
-//                jsonSreializer.decodeFromString<Map<String, MutableList<Call>>>(callHistoryFile.readText())
-//                    .toHashTable()
-//            callCountLimitMap =
-//                jsonSreializer.decodeFromString<Map<String, Int>>(defaultCallCountLimitFile.readText()).toHashTable()
-//            callLimitSubjectMap =
-//                jsonSreializer.decodeFromString<Map<String, Map<Long, Int>>>(callLimitSubjectFile.readText())
-//                    .mapValues { it.value.toHashTable() }.toHashTable()
-//            callLimitSubjectToUserMap =
-//                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, MutableMap<Long, Int>>>>(
-//                    callLimitSubjectToUserFile.readText()
-//                ).toHashTable()
-//            blockMode =
-//                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, Command.CommandBlockMode>>>(blockModeFile.readText())
-//                    .toHashTable()
-//            blackListSubject =
-//                jsonSreializer.decodeFromString<Map<String, MutableList<Long>>>(blackListSubjectFile.readText())
-//                    .toHashTable()
-//            blackListUser =
-//                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, List<Long>>>>(blackListUserFile.readText())
-//                    .toHashTable()
-//            whiteListSubject =
-//                jsonSreializer.decodeFromString<Map<String, MutableList<Long>>>(whiteListSubjectFile.readText())
-//                    .toHashTable()
-//            whiteListUser =
-//                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, List<Long>>>>(whiteListUserFile.readText())
-//                    .toHashTable()
-//            blockRunMode =
-//                jsonSreializer.decodeFromString<Map<String, Command.BlockRunMode>>(blockRunModeFile.readText())
-//                    .toHashTable()
-//            blockUser =
-//                jsonSreializer.decodeFromString<Map<String, MutableList<Long?>>>(blockUserFile.readText()).toHashTable()
-//            blockSubject =
-//                jsonSreializer.decodeFromString<Map<String, MutableList<Long?>>>(blockSubjectFile.readText())
-//                    .toHashTable()
-//            blockGlobal =
-//                jsonSreializer.decodeFromString<Map<String, Boolean>>(blockGlobalFile.readText()).toHashTable()
+            val callHistoryFile = Rika.configFolder.resolve("limitation/callHistory.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val tempDisableFile = Rika.configFolder.resolve("limitation/tempDisable.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val defaultCallCountLimitFile = Rika.configFolder.resolve("limitation/defaultCallCountLimit.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callLimitSubjectFile = Rika.configFolder.resolve("limitation/callLimitSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callLimitSubjectToUserFile = Rika.configFolder.resolve("limitation/callLimitSubjectToUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockModeFile = Rika.configFolder.resolve("limitation/blockMode.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blackListSubjectFile = Rika.configFolder.resolve("limitation/blackListSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blackListUserFile = Rika.configFolder.resolve("limitation/blackListUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val whiteListSubjectFile = Rika.configFolder.resolve("limitation/whiteListSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val whiteListUserFile = Rika.configFolder.resolve("limitation/whiteListUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitMapFile = Rika.configFolder.resolve("limitation/callCountLimitMap.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitSubjectMapFile = Rika.configFolder.resolve("limitation/callCountLimitSubjectMap.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitSubjectToUserMapFile = Rika.configFolder.resolve("limitation/callCountLimitSubjectToUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockRunModeFile = Rika.configFolder.resolve("limitation/blockRunMode.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockUserFile = Rika.configFolder.resolve("limitation/blockUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockSubjectFile = Rika.configFolder.resolve("limitation/blockSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockGlobalFile = Rika.configFolder.resolve("limitation/blockGlobal.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            callHistory =
+                jsonSreializer.decodeFromString<Map<String, MutableList<Call>>>(callHistoryFile.readText())
+                    .toHashTable()
+
+            tempDisable = ConcurrentLinkedDeque(jsonSreializer.decodeFromString<MutableList<Long>>(tempDisableFile.readText()))
+            callCountLimitMap =
+                jsonSreializer.decodeFromString<Map<String, Int>>(defaultCallCountLimitFile.readText()).toHashTable()
+            callCountLimitSubjectMap =
+                jsonSreializer.decodeFromString<Map<String, Map<Long, Int>>>(callLimitSubjectFile.readText())
+                    .mapValues { it.value.toHashTable() }.toHashTable()
+            callCountLimitSubjectToUserMap =
+                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, MutableMap<Long, Int>>>>(
+                    callLimitSubjectToUserFile.readText()
+                ).toHashTable()
+            blockMode =
+                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, CommandBlockMode>>>(blockModeFile.readText())
+                    .toHashTable()
+            blackListSubject =
+                jsonSreializer.decodeFromString<Map<String, MutableList<Long>>>(blackListSubjectFile.readText())
+                    .toHashTable()
+            blackListSubjectToUser =
+                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(blackListUserFile.readText())
+                    .toHashTable()
+            whiteListSubject =
+                jsonSreializer.decodeFromString<Map<String, MutableList<Long>>>(whiteListSubjectFile.readText())
+                    .toHashTable()
+            whiteListUser =
+                jsonSreializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(whiteListUserFile.readText())
+                    .toHashTable()
+
+            callCountLimitMap = jsonSreializer.decodeFromString<MutableMap<String, Int>>(callCountLimitMapFile.readText()).toHashTable()
+            callCountLimitSubjectMap = jsonSreializer.decodeFromString< MutableMap<String, MutableMap<Long, Int>>>(callCountLimitSubjectMapFile.readText()).toHashTable()
+            callCountLimitSubjectToUserMap = jsonSreializer.decodeFromString<MutableMap<String, MutableMap<Long, MutableMap<Long, Int>>>>(callCountLimitSubjectToUserMapFile.readText()).toHashTable()
+
+            blockRunMode =
+                jsonSreializer.decodeFromString<Map<String, BlockRunMode>>(blockRunModeFile.readText())
+                    .toHashTable()
+            blockUser =
+                jsonSreializer.decodeFromString<Map<String, MutableList<Long?>>>(blockUserFile.readText()).toHashTable()
+            blockSubject =
+                jsonSreializer.decodeFromString<Map<String, MutableList<Long?>>>(blockSubjectFile.readText())
+                    .toHashTable()
+            blockGlobal =
+                jsonSreializer.decodeFromString<Map<String, Boolean>>(blockGlobalFile.readText()).toHashTable()
         }
 
         /**
          * 用于将共用数据保存至文件
          */
         fun save() {
-//            val callHistoryFile = Rika.configFolder.resolve("limitation/callHistory.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val defaultCallCountLimitFile = Rika.configFolder.resolve("limitation/defaultCallCountLimit.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val callLimitSubjectFile = Rika.configFolder.resolve("limitation/callLimitSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val callLimitSubjectToUserFile = Rika.configFolder.resolve("limitation/callLimitSubjectToUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockModeFile = Rika.configFolder.resolve("limitation/blockMode.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blackListSubjectFile = Rika.configFolder.resolve("limitation/blackListSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blackListUserFile = Rika.configFolder.resolve("limitation/blackListUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val whiteListSubjectFile = Rika.configFolder.resolve("limitation/whiteListSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val whiteListUserFile = Rika.configFolder.resolve("limitation/whiteListUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockRunModeFile = Rika.configFolder.resolve("limitation/blockRunMode.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockUserFile = Rika.configFolder.resolve("limitation/blockUser.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockSubjectFile = Rika.configFolder.resolve("limitation/blockSubject.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            val blockGlobalFile = Rika.configFolder.resolve("limitation/blockGlobal.json")
-//                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
-//            callHistoryFile.writeText(jsonSreializer.encodeToString(callHistory.toMap()))
-//            defaultCallCountLimitFile.writeText(jsonSreializer.encodeToString(callCountLimitMap.toMap()))
-//            callLimitSubjectFile.writeText(jsonSreializer.encodeToString(callLimitSubjectMap.toMap()))
-//            callLimitSubjectToUserFile.writeText(jsonSreializer.encodeToString(callLimitSubjectToUserMap.toMap()))
-//            blockModeFile.writeText(jsonSreializer.encodeToString(blockMode.toMap()))
-//            blackListSubjectFile.writeText(jsonSreializer.encodeToString(blackListSubject.toMap()))
-//            blackListUserFile.writeText(jsonSreializer.encodeToString(blackListUser.toMap()))
-//            whiteListSubjectFile.writeText(jsonSreializer.encodeToString(whiteListSubject.toMap()))
-//            whiteListUserFile.writeText(jsonSreializer.encodeToString(whiteListUser.toMap()))
-//            blockRunModeFile.writeText(jsonSreializer.encodeToString(blockRunMode.toMap()))
-//            blockUserFile.writeText(jsonSreializer.encodeToString(blockUser.toMap()))
-//            blockSubjectFile.writeText(jsonSreializer.encodeToString(blockSubject.toMap()))
-//            blockGlobalFile.writeText(jsonSreializer.encodeToString(blockGlobal.toMap()))
+            val callHistoryFile = Rika.configFolder.resolve("limitation/callHistory.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val tempDisableFile = Rika.configFolder.resolve("limitation/tempDisable.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockModeFile = Rika.configFolder.resolve("limitation/blockMode.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blackListSubjectFile = Rika.configFolder.resolve("limitation/blackListSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blackListUserFile = Rika.configFolder.resolve("limitation/blackListUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val whiteListSubjectFile = Rika.configFolder.resolve("limitation/whiteListSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val whiteListUserFile = Rika.configFolder.resolve("limitation/whiteListUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitMapFile = Rika.configFolder.resolve("limitation/callCountLimitMap.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitSubjectMapFile = Rika.configFolder.resolve("limitation/callCountLimitSubjectMap.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val callCountLimitSubjectToUserMapFile = Rika.configFolder.resolve("limitation/callCountLimitSubjectToUserMap.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockRunModeFile = Rika.configFolder.resolve("limitation/blockRunMode.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockUserFile = Rika.configFolder.resolve("limitation/blockUser.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockSubjectFile = Rika.configFolder.resolve("limitation/blockSubject.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            val blockGlobalFile = Rika.configFolder.resolve("limitation/blockGlobal.json")
+                .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
+            callHistoryFile.writeText(jsonSreializer.encodeToString(callHistory.toMap()))
+            tempDisableFile.writeText(jsonSreializer.encodeToString(tempDisable.toList()))
+
+            blockModeFile.writeText(jsonSreializer.encodeToString(blockMode.toMap()))
+            blackListSubjectFile.writeText(jsonSreializer.encodeToString(blackListSubject.toMap()))
+            blackListUserFile.writeText(jsonSreializer.encodeToString(blackListSubjectToUser.toMap()))
+            whiteListSubjectFile.writeText(jsonSreializer.encodeToString(whiteListSubject.toMap()))
+            whiteListUserFile.writeText(jsonSreializer.encodeToString(whiteListUser.toMap()))
+
+            callCountLimitMapFile.writeText(jsonSreializer.encodeToString(callCountLimitMap.toMap()))
+            callCountLimitSubjectMapFile.writeText(jsonSreializer.encodeToString(callCountLimitSubjectMap.toMap()))
+            callCountLimitSubjectToUserMapFile.writeText(jsonSreializer.encodeToString(callCountLimitSubjectToUserMap.toMap()))
+
+
+            blockRunModeFile.writeText(jsonSreializer.encodeToString(blockRunMode.toMap()))
+            blockUserFile.writeText(jsonSreializer.encodeToString(blockUser.toMap()))
+            blockSubjectFile.writeText(jsonSreializer.encodeToString(blockSubject.toMap()))
+            blockGlobalFile.writeText(jsonSreializer.encodeToString(blockGlobal.toMap()))
         }
 
         /**

@@ -18,7 +18,7 @@ object BotTaskController:Timer() {
         tasks.forEach {
             val name = it::class.simpleName ?: it::class.jvmName
 
-            val firstTime = it.getNextFirstTime()!!
+            val firstTime = it.getNextFirstTime()
             val period = it.getMinPeriod()
             var delayTime = firstTime.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
             if (delayTime < 0) {

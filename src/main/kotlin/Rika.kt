@@ -1,14 +1,10 @@
 package org.celery
 
-import org.celery.task.CleanCacheTask
-import org.celery.task.CommandDataAutoSave
-import org.celery.utils.task_controller.BotTaskController
 import command.common.marry_member.MarryMemberCommand
 import command.common.marry_member.MarryMemberCommandBeXioaSan
 import net.mamoe.mirai.console.command.Command
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
-import org.celery.command.controller.CommandExecuter
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.event.GlobalEventChannel
@@ -16,9 +12,15 @@ import net.mamoe.mirai.event.registerTo
 import net.mamoe.mirai.utils.info
 import org.celery.command.builtin.*
 import org.celery.command.common.grass_cutter.GrassCutterStatCommand
+import org.celery.command.common.love_generate_electricity.LoveGenerateElectricity
 import org.celery.command.common.marry_member.data.MarryMemberData
 import org.celery.command.controller.CCommand
+import org.celery.command.controller.CommandExecuter
 import org.celery.command.controller.EventCommand
+import org.celery.command.controller.Limitable
+import org.celery.task.CleanCacheTask
+import org.celery.task.CommandDataAutoSave
+import org.celery.utils.task_controller.BotTaskController
 
 object Rika : KotlinPlugin(
     JvmPluginDescription(
@@ -35,6 +37,11 @@ object Rika : KotlinPlugin(
         MarryMemberData.reload()
     }
     override fun onEnable() {
+        try {
+            Limitable.load()
+        } catch (_:Exception) {
+            Limitable.save()
+        }
         //internal
         CommandExecuter.registerTo(GlobalEventChannel)
         //builtin commands
@@ -53,7 +60,13 @@ object Rika : KotlinPlugin(
         BotTaskController.add(CommandDataAutoSave())
         // start task
         BotTaskController.registerAll()
+        LoveGenerateElectricity.reg()
         logger.info { "Rika loaded" }
+    }
+
+    override fun onDisable() {
+        Limitable.save()
+        super.onDisable()
     }
 }
 
