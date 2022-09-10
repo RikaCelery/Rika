@@ -29,5 +29,4 @@ dependencies {
 }
 mirai {
     jvmTarget = JavaVersion.VERSION_11
-
 }

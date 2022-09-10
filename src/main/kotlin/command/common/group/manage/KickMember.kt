@@ -15,8 +15,8 @@ import org.celery.utils.group.GroupTools
 import org.celery.utils.permission.isSuperUser
 
 object KickMember : RegexCommand(
-    "踢人", "^(?:kick|踢人?)\\s*(.+)".toRegex(), description = "踢人,仅管理员可用",
-    normalUsage = "kick|踢人 <群员>",
+    "踢人", "^(?:kick|踢人?)\\s*(.+)".toRegex(), normalUsage = "kick|踢人 <群员>",
+    description = "踢人,仅管理员可用",
 ) {
     override var defaultCountLimit: Int
         get() = 300

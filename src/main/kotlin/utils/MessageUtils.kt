@@ -16,3 +16,8 @@ suspend fun File.toImage(subject: Contact): Image {
         subject.uploadImage(it)
     })
 }
+suspend fun ByteArray.toImage(subject: Contact): Image {
+    return (toExternalResource().use {
+        subject.uploadImage(it)
+    })
+}

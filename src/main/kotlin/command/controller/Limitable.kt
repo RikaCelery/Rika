@@ -255,6 +255,7 @@ interface Limitable {
             Global -> callHistory[call.commandId]?.size
             Subject -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId }?.size
             User -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId && it.userId == call.userId }?.size
+            PureUser -> callHistory[call.commandId]?.filter { it.userId == call.userId }?.size
         }
         return size
     }
@@ -440,18 +441,10 @@ interface Limitable {
         size ?: return true
         if (size == finalLimit) {
             Rika.logger.debug("last call, limit: $finalLimit.")
-            if (showTip)
-                Bot.instances.find { call.subjectId?.let { it1 -> it.getContactOrNull(it1,false) } !=null }?.let {
-                    runBlocking{
-                        val name = when (defaultCallCountLimitMode) {
-                            Global -> "全局"
-                            Subject -> "群"
-                            User -> "你"
-                        }
-                        it.getContact(call.subjectId!!,false).sendMessage(At(it.getGroupOrFail(call.subjectId).getOrFail(call.userId!!))+PlainText("他妈！$name${call.commandId}指令的次数已经被你小子用完了($finalLimit)"))
-                        delay(1000)
-                    }
-                }
+            if (showTip) runBlocking{
+                Bot.instances.find { call.subjectId?.let { it1 -> it.getContactOrNull(it1, false) } != null }
+                    ?.limitNotice(call, finalLimit)
+            }
         }
         if (size > finalLimit) {
             Rika.logger.debug("checkCountLimit failed, limit is $finalLimit.")
@@ -460,13 +453,33 @@ interface Limitable {
         return true
     }
 
+    @OptIn(ConsoleExperimentalApi::class)
+    suspend fun Bot.limitNotice(call: Call, finalLimit: Int) {
+            runBlocking {
+                val name = when (this@Limitable.defaultCallCountLimitMode) {
+                    Global -> "全局"
+                    Subject -> "群"
+                    User -> "你群的你"
+                    PureUser -> "你"
+                }
+                getContact(call.subjectId!!, false).sendMessage(
+                    At(
+                        getGroupOrFail(call.subjectId).getOrFail(call.userId!!)
+                    ) + PlainText("他妈！${name}的${call.commandId}指令的次数已经被你小子用完了($finalLimit)")
+                )
+                delay(1000)
+            }
+
+    }
+
     fun getCallSizeOrNull(call: Call): Int? {
-        val size = when (this.defaultCallCountLimitMode) {
+        val size = when (defaultCallCountLimitMode) {
             Global -> callHistory[call.commandId]?.size
             Subject -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId }?.size
             User -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId && it.userId == call.userId }?.size
+            PureUser -> callHistory[call.commandId]?.filter { it.userId == call.userId }?.size
         }
-        return size
+        return size.let { if (it==0) null else it }
     }
 
     fun checkFrequency(call: Call): Boolean {
@@ -481,10 +494,11 @@ interface Limitable {
     }
 
     private fun getLastCallOrNull(call: Call): Call? {
-        val last = when (getBlockRunMode(call.commandId) ?: Subject) {
+        val last = when (getBlockRunMode(call.commandId)) {
             Global -> callHistory[call.commandId]?.lastOrNull()
             Subject -> callHistory[call.commandId]?.lastOrNull { it.subjectId == call.subjectId }
             User -> callHistory[call.commandId]?.lastOrNull { it.subjectId == call.subjectId && it.userId == call.userId }
+            PureUser -> callHistory[call.commandId]?.lastOrNull { it.userId == call.userId }
         }
         return last
     }

@@ -13,8 +13,8 @@ import org.celery.utils.interact.nextMessage
 import org.celery.utils.sendMessage
 
 object Banme : RegexCommand(
-    "banme", "^/?banme".toRegex(), description = "娱乐禁言",
-    normalUsage = "banme",
+    "banme", "^/?banme".toRegex(), normalUsage = "banme",
+    description = "娱乐禁言",
 ) {
     private val rander = kotlin.random.Random
     override var defaultCoolDown: Long = 1000

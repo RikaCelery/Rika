@@ -7,7 +7,6 @@ import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.content
 import okhttp3.internal.toHexString
 import org.celery.command.common.funny.emoji_mix.EmojiConsts.EMOJI_REGEX
-import org.celery.command.controller.CommandBlockMode
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.http.HttpUtils
@@ -19,8 +18,6 @@ object AddMix : RegexCommand(
     regex = "^添加混合表情(.{2,20})".toRegex(),
     normalUsage = "添加表情混合<emoji1><emoji2>",
     description = "向emojimix图库内加图",
-    example = "😂🤣\n😍😗",
-    blockMode = CommandBlockMode.BLACKLIST,
     secondaryRegexs = arrayOf("^添加表情混合(.{2,20})".toRegex())
 ) {
     override var blockSub: Boolean = true

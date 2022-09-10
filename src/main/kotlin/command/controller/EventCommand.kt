@@ -187,14 +187,16 @@ abstract class EventCommand<E : BotEvent>(
         }
         return ExecutionResult.Error(IllegalStateException("no matching function"))
     }
-
+//    val callSizeGetMode =
     private fun List<Pair<KFunction<*>, Command>>.filterFunction(call: Call): KFunction<*>? {
         val maxOf = maxOf { it.second.repeat }
         if (getCountLimit(call) < maxOf) {
             logger.warning { "指令的限制次数过小,无法执行第${maxOf}次重复调用时的内容" }
         }
-        var find = find { it.second.repeat == (getCallSizeOrNull(call)?:1) }
-        if (find == null && all { it.second.repeat <= (getCallSizeOrNull(call)?:1) }) find = maxByOrNull { it.second.repeat }
+        val i = getCallSize(call)+1
+        println("callSize = $i")
+        var find = find { it.second.repeat == i }
+        if (find == null && all { it.second.repeat <= i }) find = maxByOrNull { it.second.repeat }
         return find?.first
     }
 
@@ -254,6 +256,7 @@ abstract class RegexCommand(
     open val params: List<CommandUsage.CommandParam> = listOf(),
     override val description: String = "",
     override val example: String = "",
+    open val configInfo: String = "",
     override val blockMode: CommandBlockMode = CommandBlockMode.BLACKLIST,
     open vararg val secondaryRegexs: Regex = arrayOf()
 ) : EventCommand<MessageEvent>(commandId, regex, priority, description, example, blockMode) {

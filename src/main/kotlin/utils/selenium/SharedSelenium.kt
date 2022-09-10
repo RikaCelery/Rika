@@ -4,7 +4,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.celery.utils.file.FileTools
 import java.io.File
 
-object ShareSelenium : Selenium(false) {
+object SharedSelenium : Selenium(false) {
     fun renderRaw(html: String): File {
         val tempFile = FileTools.creatTempFile("html")
         tempFile.writeText(html)

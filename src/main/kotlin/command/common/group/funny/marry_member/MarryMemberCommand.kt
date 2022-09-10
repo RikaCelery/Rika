@@ -24,20 +24,16 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 object MarryMemberCommand : RegexCommand(
-    "娶群友", "^娶群友\\s*(.+)?".toRegex(), description = "娶群友", secondaryRegexs = arrayOf("^嫁群友\\s*(.+)?".toRegex()),
-    normalUsage = "娶群友|嫁群友 <TA>",
+    "娶群友", "^娶群友\\s*(.+)?".toRegex(), normalUsage = "娶群友|嫁群友 <TA>", description = "娶群友",
+    secondaryRegexs = arrayOf("^嫁群友\\s*(.+)?".toRegex()),
 ) {
     @Command
     suspend fun GroupMessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         if (newMap[group.id] == null) newMap[group.id] = mutableListOf()
 
         val (index, match) = eventMatchResult.getIndexedResult()
-        logger.info("(index, match) = ${eventMatchResult.getIndexedResult().first} ${eventMatchResult.getIndexedResult().second.groupValues}")
         val target = GroupTools.getUserOrNull(group, match.groupValues[1].trim())?.also {
-            logger.info("get user $it")
-        }?.cast<Member>().also {
-            logger.info("get member $it")
-        }
+        }?.cast<Member>()
         //自己娶了别人或者被娶了，当小三不处理
         if (MarryMemberData[group.id, sender.id] != null) {
             // 被娶了
@@ -199,8 +195,8 @@ private suspend fun GroupMessageEvent.getImage(target: Member) :Image {
 
 
 object MarryMemberCommandBeXioaSan : RegexCommand(
-    "当小三", "^当\\s*(.+)\\s*的小三".toRegex(), description = "当小三",
-    normalUsage = "当<TA>的小三",
+    "当小三", "^当\\s*(.+)\\s*的小三".toRegex(), normalUsage = "当<TA>的小三",
+    description = "当小三",
 ) {
     @Command
     suspend fun GroupMessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {

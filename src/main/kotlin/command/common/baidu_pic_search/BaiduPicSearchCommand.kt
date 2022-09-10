@@ -23,8 +23,8 @@ import java.net.URLEncoder
 object BaiduPicSearchCommand: RegexCommand(
     "百度搜图",
     "^搜图\\s*(.+)".toRegex(),
-    secondaryRegexs = arrayOf("^带链接搜图\\s*(.+)".toRegex()),
     normalUsage = "搜图<someThing>[页数]",
+    secondaryRegexs = arrayOf("^带链接搜图\\s*(.+)".toRegex()),
 ){
     private val warnings = mutableMapOf<Long?, Int>()
     @Command

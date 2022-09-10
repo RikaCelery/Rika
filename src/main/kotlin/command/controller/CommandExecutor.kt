@@ -93,6 +93,27 @@ object CommandExecutor : SimpleListenerHost() {
 
                 }
             }
+            PureUser -> with(Limitable) {
+                if (blockUser[call.commandId]?.contains(call.userId) == true) {
+                    Ignored("blockPureUser blocked.")
+                } else {
+                    blockUser[call.commandId]?.add(call.userId) ?: blockUser.put(
+                        call.commandId,
+                        mutableListOf(call.userId)
+                    )
+                    val executionResult = try {
+                        reactor()
+                    }catch (e: InvocationTargetException){
+                        Failed(e.cause,e.cause?.message)
+                    } catch (e: Exception) {
+                        Failed(exception = e, message = e.message)
+                    } finally {
+                        blockUser[call.commandId]?.remove(call.userId)
+                    }
+                    executionResult
+
+                }
+            }
         }
 
         when (result) {

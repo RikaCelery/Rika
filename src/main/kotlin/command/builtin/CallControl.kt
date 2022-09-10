@@ -15,8 +15,8 @@ import org.celery.utils.permission.isSuperUser
 
 object CallControl:RegexCommand(
     commandId = "次数限制",
-    normalUsage = "设置<功能名>次数[次数][群成员]",
-    regex = "设置(.*)次数\\s?(\\d+)\\s?(.*)".toRegex()
+    regex = "设置(.*)次数\\s?(\\d+)\\s?(.*)".toRegex(),
+    normalUsage = "设置<功能名>次数[次数][群成员]"
 ){
     @Command
     fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {

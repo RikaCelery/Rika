@@ -24,17 +24,21 @@ import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.registerTo
 import net.mamoe.mirai.utils.info
 import org.celery.command.builtin.*
+import org.celery.command.common.NetEase
 import org.celery.command.common.TestCommand
 import org.celery.command.common.funny.IKunTimeTransformer
 import org.celery.command.common.funny.MyLuck
+import org.celery.command.common.funny.SearchGeng
 import org.celery.command.common.funny.emoji_mix.AddMix
 import org.celery.command.common.funny.emoji_mix.DeleteMix
 import org.celery.command.common.funny.emoji_mix.EmojiMix
 import org.celery.command.common.funny.speak_something_shit.SpeakSomeShit
+import org.celery.command.common.github.Github
 import org.celery.command.common.group.`fun`.banme.Banme
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricity
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricityAdd
 import org.celery.command.common.nbnhhsh.Nbnhhsh
+import org.celery.command.common.temp_pick_moon_cake.PickMoonCake
 import org.celery.command.controller.CCommand
 import org.celery.command.controller.CommandExecutor
 import org.celery.command.controller.EventCommand
@@ -114,6 +118,10 @@ object Rika : KotlinPlugin(
         IKunTimeTransformer.reg()
         TestCommand.reg()
         MyLuck.reg()
+        SearchGeng.reg()
+        Github.reg()
+        NetEase.reg()
+        PickMoonCake.reg()
         // add task
         BotTaskController.add(CleanCacheTask())
         BotTaskController.add(CommandDataAutoSave())
@@ -124,6 +132,7 @@ object Rika : KotlinPlugin(
         mainCheck()
         allRegisteredCommand.forEach(CCommand::perCheck)
         logger.info { "Rika loaded" }
+
         logger.info { "********************************************************" }
     }
 

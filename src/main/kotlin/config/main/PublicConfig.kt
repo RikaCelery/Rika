@@ -7,7 +7,6 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import net.mamoe.mirai.utils.MiraiLogger
 import org.celery.Rika
-import org.celery.utils.serialization.defaultJson
 import java.util.*
 
 object PublicConfig {
@@ -23,6 +22,7 @@ object PublicConfig {
         modules.forEach {
             serializersModule += it
         }
+        prettyPrint = true
     }
 
 
@@ -36,11 +36,11 @@ object PublicConfig {
 
     var pluginConfigs = mutableMapOf<String, String>()
     fun save() {
-        pluginConfigsFile.writeText(defaultJson.encodeToString(pluginConfigs))
+        pluginConfigsFile.writeText(jsonSerializer.encodeToString(pluginConfigs))
     }
 
     private fun load() {
-        pluginConfigs = defaultJson.decodeFromString(pluginConfigsFile.readText())
+        pluginConfigs = jsonSerializer.decodeFromString(pluginConfigsFile.readText())
     }
 
     fun reload() {

@@ -16,8 +16,8 @@ import org.celery.utils.time.TimeConsts
 object AdvanceMute : RegexCommand(
     "mute",
     "^(?:mute|禁言)\\s*((?:@?[\\d\\S]+\\s*)+)".toRegex(),
-    description = "快捷/批量/全体禁言,支持自定义时长",
     normalUsage = "mute[群成员1][群成员2]... [禁言时间]",
+    description = "快捷/批量/全体禁言,支持自定义时长",
     example = "\nmute 1029303 1d (禁言1029303 1天)\nmute 1029303 0 (取消禁言)\nmute @avca @vuavcus @ayhs 1h (禁言@avca @vuavcus @ayhs 1小时)\nmute all  (全体禁言)\nmute all 0 (取消全体禁言)\n"
 ) {
 

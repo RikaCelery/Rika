@@ -51,13 +51,13 @@ object GroupTools {
         }
         if (candidates.isNotEmpty()) {
             var index = 1
-//            sendMessage(
-//                "无法找到成员 $nameCard。 多个成员满足搜索结果或匹配度不足: \n\n" +
-//                        candidates.joinToString("\n", limit = 6) {
-//                            val percentage = (it.second * 100).toDecimalPlace(0)
-//                            "#${index++}(${percentage}%)${it.first.nameCardOrNick.truncate(10)}(${it.first.id})" // #1 15.4%
-//                        }
-//            )
+            println(
+                "无法找到成员 $nameCard。 多个成员满足搜索结果或匹配度不足: \n\n" +
+                        candidates.joinToString("\n", limit = 6) {
+                            val percentage = (it.second * 100).toDecimalPlace(0)
+                            "#${index++}(${percentage}%)${it.first.nameCardOrNick.truncate(10)}(${it.first.id})" // #1 15.4%
+                        }
+            )
         }
         return null
     }

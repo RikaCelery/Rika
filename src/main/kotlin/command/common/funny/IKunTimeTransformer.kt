@@ -9,7 +9,7 @@ import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeConsts
 
 object IKunTimeTransformer:RegexCommand(
-    "坤坤换算","^(\\d+)(s|秒|m|min|分钟|h|小时|d|天|mon|月|year|年)?是(?:多少|几)[坤鲲]".toRegex()
+    "坤坤换算", "^(\\d+)(s|秒|m|min|分钟|h|小时|d|天|mon|月|year|年)?是(?:多少|几)[坤鲲]".toRegex()
 ) {
     @Command
     suspend fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {

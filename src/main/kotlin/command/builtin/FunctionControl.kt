@@ -5,8 +5,10 @@ import net.mamoe.mirai.console.command.ConsoleCommandSender
 import net.mamoe.mirai.console.command.SimpleCommand
 import net.mamoe.mirai.event.events.MessageEvent
 import org.celery.Rika
+import org.celery.command.controller.CCommand
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
+import kotlin.reflect.jvm.jvmName
 
 /**
  * 开关某个指令
@@ -20,26 +22,24 @@ object FunctionCallControl : RegexCommand(
     @Command(ExecutePermission.Operator)
     suspend fun MessageEvent.handle(matchResult: EventMatchResult): ExecutionResult {
         val mode = matchResult.getResult().groupValues[1]
-        val command =
-            Rika.allRegisteredCommand.find { it.commandId.equals(matchResult.getResult().groupValues[2].trim(), true) }
+        val commands = if (matchResult[2]=="*") Rika.allRegisteredCommand.filterNot { it::class.jvmName.contains("builtin") } else
+            Rika.allRegisteredCommand.filter { it.commandId.equals(matchResult.getResult().groupValues[2].trim(), true) }.ifEmpty { null }
                 ?: return ExecutionResult.Ignored("command not found.")
         when (mode) {
             "开启" -> {
                 if (subject == sender) {
-                    command.enable()
+                    commands.forEach(CCommand::enable)
                     subject.sendMessage("OK")
                 } else {
-                    if (command.enableFor(subject.id)) subject.sendMessage("OK")
-                    else subject.sendMessage("OK")
+                    commands.forEach { it.enableFor(subject.id) }
                 }
             }
             "关闭" -> {
                 if (subject == sender) {
-                    command.disable()
+                    commands.forEach(CCommand::disable)
                     subject.sendMessage("OK")
                 } else {
-                    if (command.disableFor(subject.id)) subject.sendMessage("OK")
-                    else subject.sendMessage("OK")
+                    commands.forEach { it.disableFor(subject.id) }
                 }
             }
             else -> return ExecutionResult.Ignored("mode:$mode is invalid.")

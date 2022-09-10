@@ -9,6 +9,7 @@ import org.celery.utils.file.FileTools
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URL
@@ -144,7 +145,7 @@ object HttpUtils {
                                     printProgress()
                                 }
                             }, 0, 500)
-                            while (it.read(buffer).also { len = it } != -1) {
+                            while (it.tryread(buffer).also { len = it } != -1) {
                                 progress = (sum.addAndGet(len.toLong()) * 1.0f / total * 100)
                                 outputStream.write(buffer, 0, len)
                                 mD5.update(buffer, 0, len)
@@ -290,6 +291,16 @@ object HttpUtils {
             .cache(null)
             .proxy(Proxy(Proxy.Type.SOCKS, InetSocketAddress(ProxyConfigs.httpClientPort)))
             .retryOnConnectionFailure(true).build()
+    }
+}
+
+private fun InputStream.tryread(buffer: ByteArray,depth:Int = 0): Int {
+    return try {
+        read(buffer)
+    } catch (e:Exception) {
+        if (depth>20)
+            throw e
+        tryread(buffer,depth+1)
     }
 }
 

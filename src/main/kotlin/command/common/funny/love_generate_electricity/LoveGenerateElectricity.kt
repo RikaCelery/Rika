@@ -44,7 +44,7 @@ object LoveGenerateElectricity : RegexCommand(
             sendMessage("没电了...")
             return ExecutionResult.LimitCall
         }
-        val member: String? = eventMatchResult.getResult().groupValues[1].ifBlank { null }
+        val member: String? = eventMatchResult[1].trim().ifBlank { null }
         val target =
             if (member != null && member.startsWith("@")) GroupTools.getUserOrNull(
                 subject,

@@ -14,7 +14,7 @@ import org.celery.command.controller.CommandUsage
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.http.HttpUtils
-import org.celery.utils.selenium.ShareSelenium
+import org.celery.utils.selenium.SharedSelenium
 
 object Nbnhhsh : RegexCommand(
     commandId = "能不能好好说话",
@@ -51,7 +51,7 @@ object Nbnhhsh : RegexCommand(
                 group.sendMessage("我不知道（〃｀ 3′〃）")
                 return ExecutionResult.Ignored("not found result")
             }
-            ShareSelenium.renderRaw(renderHtml(resultList!!.first, resultList!!.second)).toExternalResource().use {
+            SharedSelenium.renderRaw(renderHtml(resultList!!.first, resultList!!.second)).toExternalResource().use {
                 group.uploadImage(it)
             }.sendTo(group)
             return ExecutionResult.Success

@@ -6,7 +6,9 @@ import net.mamoe.mirai.message.data.content
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import okhttp3.internal.toHexString
 import org.celery.command.common.funny.emoji_mix.EmojiConsts.EMOJI_REGEX
-import org.celery.command.controller.*
+import org.celery.command.controller.BlockRunMode
+import org.celery.command.controller.EventMatchResult
+import org.celery.command.controller.RegexCommand
 import org.celery.utils.http.HttpUtils
 import java.io.File
 
@@ -18,14 +20,12 @@ object EmojiMix : RegexCommand(
     commandId = "表情混合",
     regex = EMOJI_REGEX.toRegex(),
     priority = 4,
-    normalUsage = "",
-    params = listOf(CommandUsage.CommandParam("emoji1"), CommandUsage.CommandParam("emoji2")),
+    normalUsage = "<emoji1><emoji2>",
     description = "混合两个emoji表情",
-    example = "😂🤣\n😍😗",
-    blockMode = CommandBlockMode.BLACKLIST
+    example = "😂🤣",
 ) {
-    override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.User
-    override var defaultCountLimit: Int = 100
+    override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.Subject
+    override var defaultCountLimit: Int = 40
     override var defaultCoolDown: Long = 10
     @Command
     suspend fun MessageEvent.nn(matchResult: EventMatchResult): ExecutionResult {
