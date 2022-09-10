@@ -1,4 +1,4 @@
-package configData
+package config.pixiv.config
 
 import kotlinx.serialization.Serializable
 import xyz.cssxsh.pixiv.apps.IllustInfo

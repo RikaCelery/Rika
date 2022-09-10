@@ -1,12 +1,12 @@
 package org.celery.utils.pixiv
 
-import org.celery.utils.pixiv.PixivManager.saveAll
-import org.celery.utils.sql.insertOrUpdate
 import io.ktor.http.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import org.celery.Rika
+import org.celery.utils.pixiv.PixivManager.saveAll
 import org.celery.utils.pixiv.pixivClient.PixivClientPool
+import org.celery.utils.sql.insertOrUpdate
 import xyz.cssxsh.pixiv.SearchTarget
 import xyz.cssxsh.pixiv.apps.IllustInfo
 import xyz.cssxsh.pixiv.apps.searchIllust
@@ -26,6 +26,7 @@ private val logger = Rika.logger
 //        DownloaderManager.illustList.add(it)
 //    }
 //}
+@Suppress("unused")
 suspend fun IllustInfo.getFiles(n: Int? = null): MutableList<File> {
     val list = mutableListOf<File>()
     supervisorScope {

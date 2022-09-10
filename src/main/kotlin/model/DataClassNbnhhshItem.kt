@@ -7,5 +7,5 @@ data class DataClassNbnhhshItem(
     val trans: List<String>? = null
 ) {
     val result: Pair<String, List<String>>
-        get() = trans?.let { Pair(name, it) } ?: inputting?.let { Pair(name, it) } ?: Pair(name, listOf<String>())
+        get() = trans?.let { Pair(name, it) } ?: inputting?.let { Pair(name, it) } ?: Pair(name, listOf())
 }

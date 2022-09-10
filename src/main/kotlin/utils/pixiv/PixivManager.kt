@@ -24,7 +24,7 @@ private const val MAX_RETRY = 4
 object PixivManager {
     val logger = MiraiLogger.Factory.create(this::class, "PixivClientManager")
 
-    val client: PixivClientPool.AuthClient
+    private val client: PixivClientPool.AuthClient
         get() {
 //           println("获取一个client实例")
             return PixivClientPool.client()

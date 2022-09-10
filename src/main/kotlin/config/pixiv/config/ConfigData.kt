@@ -13,6 +13,7 @@ import xyz.cssxsh.pixiv.apps.IllustInfo
 import xyz.cssxsh.pixiv.apps.UserInfo
 import java.time.OffsetDateTime
 
+@Suppress("unused")
 object ConfigData {
     private val ConfigJson = Json {
         encodeDefaults = true
@@ -22,7 +23,7 @@ object ConfigData {
         isLenient = true
     }
     private val mutex = Mutex()
-    private val logger = MiraiLogger.Factory.create(ConfigData::class.java)
+    private val logger = MiraiLogger.Factory.create(ConfigData::class.java,"Rika-ConfigData(Pixiv)")
 
     var config: Config
 
@@ -86,6 +87,8 @@ object ConfigData {
         }
         logger.info("config_data saved successfully")
     }
+
+
 
     init {
         logger.info("init config")

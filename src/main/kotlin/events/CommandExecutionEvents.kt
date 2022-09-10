@@ -1,10 +1,10 @@
 package events
 
-import org.celery.command.controller.Call
-import org.celery.command.controller.EventCommand
 import net.mamoe.mirai.event.AbstractEvent
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.events.BotEvent
+import org.celery.command.controller.Call
+import org.celery.command.controller.EventCommand
 import org.celery.command.controller.EventMatchResult
 
 interface CommandExecutionEvent<E : Event> : Event {
@@ -27,9 +27,16 @@ class EventCommandExecutionEvent<E : BotEvent>(
 ) : CommandExecutionEvent<E>, AbstractEvent()
 
 sealed class ExecutionResult {
-    class Success : ExecutionResult()
-    class Faild(val exception: Throwable? = null) : ExecutionResult()
+    object Success : ExecutionResult()
+
+    /**
+     * 指令没有正常执行，但需要限制调用频率
+     */
+    object LimitCall: ExecutionResult()
+    class Failed(val exception: Throwable? = null, val message:String? = null) : ExecutionResult(){
+        constructor(exception: Throwable): this(exception, null)
+    }
     class Ignored(val reason: String? = null) : ExecutionResult()
-    class Unknown : ExecutionResult()
+    object Unknown : ExecutionResult()
     class Error(val cause: Throwable? = null) : ExecutionResult()
 }

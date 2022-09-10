@@ -12,7 +12,7 @@ fun createTrustAllSSLFactory(trustAllManager: TrustAllManager): SSLSocketFactory
     try {
         val sc: SSLContext = SSLContext.getInstance("TLS")
         sc.init(null, arrayOf(trustAllManager), SecureRandom())
-        ssfFactory = sc.getSocketFactory()
+        ssfFactory = sc.socketFactory
     } catch (ignored: Exception) {
         ignored.printStackTrace()
     }
@@ -21,11 +21,7 @@ fun createTrustAllSSLFactory(trustAllManager: TrustAllManager): SSLSocketFactory
 
 //获取HostnameVerifier
 fun createTrustAllHostnameVerifier(): HostnameVerifier {
-    return object : HostnameVerifier {
-        override fun verify(hostname: String?, session: SSLSession?): Boolean {
-            return true
-        }
-    }
+    return HostnameVerifier { _, _ -> true }
 }
 
 

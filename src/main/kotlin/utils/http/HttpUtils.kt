@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.GZIPInputStream
 import kotlin.math.roundToInt
 
+
+@Suppress("unused")
 object HttpUtils {
     private val caches = mutableMapOf<String, String>()
     private val logger = MiraiLogger.Factory.create(this::class)
@@ -39,17 +41,11 @@ object HttpUtils {
         @Synchronized
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
             cookieStore[url.host] = cookies
-            cookies.forEach {
-//                logger.trace("saveFromResponse: ${url.host}, ${it.name} = ${it.value}")
-            }
         }
 
         @Synchronized
         override fun loadForRequest(url: HttpUrl): List<Cookie> {
             val cookies = cookieStore[url.host]
-            cookies?.forEach {
-//                logger.trace("loadForRequest: ${url.host}, ${it.name} = ${it.value}")
-            }
             return cookies ?: listOf()
         }
 
@@ -68,7 +64,17 @@ object HttpUtils {
         20L, TimeUnit.MINUTES
     )
     private val trustAllManager = TrustAllManager()
-    private val clientNoProxy: OkHttpClient
+    private val clientNoProxy: OkHttpClient = OkHttpClient.Builder()
+        .cookieJar(MyCookieJar)
+        .connectionPool(connectionPool)
+        .callTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .sslSocketFactory(createTrustAllSSLFactory(trustAllManager)!!, trustAllManager)
+        .hostnameVerifier(createTrustAllHostnameVerifier())
+        .cache(cache)
+        .retryOnConnectionFailure(true).build()
     private val clientProxy: OkHttpClient
     private var outputStream = ByteArrayOutputStream()
     private fun getClient() = if (ProxyConfigs.httpClientEnable) clientProxy else clientNoProxy
@@ -272,17 +278,6 @@ object HttpUtils {
     }
 
     init {
-        clientNoProxy = OkHttpClient.Builder()
-            .cookieJar(MyCookieJar)
-            .connectionPool(connectionPool)
-            .callTimeout(60, TimeUnit.SECONDS)
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .sslSocketFactory(createTrustAllSSLFactory(trustAllManager)!!, trustAllManager)
-            .hostnameVerifier(createTrustAllHostnameVerifier())
-            .cache(cache)
-            .retryOnConnectionFailure(true).build()
         clientProxy = OkHttpClient.Builder()
             .cookieJar(MyCookieJar)
             .connectionPool(connectionPool)

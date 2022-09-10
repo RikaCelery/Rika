@@ -1,16 +1,15 @@
 package model
 
 
-import org.celery.utils.http.HttpUtils.downloader
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.mamoe.mirai.contact.Contact
-import net.mamoe.mirai.contact.Group
-import net.mamoe.mirai.contact.Member
+import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.Message
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
+import org.celery.utils.http.HttpUtils.downloader
 
 @Serializable
 data class DataBaiduPicSearch(
@@ -54,10 +53,10 @@ data class DataBaiduPicSearch(
             return replaceUrl.firstOrNull()?.objUrl
         }
 
-        suspend fun getImageMessage(sender: Member, group: Group): Message {
+        suspend fun getImageMessage(sender: User, group: Contact): Message {
             if (setSize > 0) {
                 val builder = ForwardMessageBuilder(group)
-                builder.add(sender, PlainText(getInfo()))
+                builder.add(sender, PlainText(getTitle()))
                 imageSet.forEach {
                     builder.add(sender, it.getMessage(group))
                 }
@@ -83,10 +82,15 @@ data class DataBaiduPicSearch(
         }
 
         fun getInfo(): String {
-            return "${fromPageTitleEnc.ifEmpty { fromPageTitle.replace(Regex("</?\\w+>"), "") }}\n" +
-                    replaceUrl.first().fromUrl
+            return "${fromPageTitleEnc.ifEmpty { fromPageTitle.replace(Regex("</?\\w+>"), "") }}\n" /*+
+                    replaceUrl.first().fromUrl*/
         }
 
+
+        fun getTitle(): String {
+            return "${fromPageTitleEnc.ifEmpty { fromPageTitle.replace(Regex("</?\\w+>"), "") }}\n" /*+
+                    replaceUrl.first().fromUrl*/
+        }
         @Serializable
         data class DataReplaceUrl(
             @SerialName("FromUrl")

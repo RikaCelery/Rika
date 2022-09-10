@@ -4,7 +4,7 @@ import org.openqa.selenium.Keys
 
 object PreActions {
     object AfterGet {
-        val afterGet = "afterGet"
+        const val afterGet = "afterGet"
     }
 
     object BeforeShot

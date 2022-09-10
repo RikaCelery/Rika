@@ -24,9 +24,9 @@ data class CommandUsage(
         if (!havePermission) className += "no-permission"
         val DivCommandName = """
             <div class="command-name">
-                ${basicUsage.commandNameDisplay}
+                ${basicUsage.commandNameDisplay.replaceParam()}
                 ${basicUsage.params.joinToString("") { it.render() }}
-                <span>${others.let { if (it.isNotBlank()) "`$it`" else "" }}</span>
+                <span>${others.let { it.ifBlank { "" } }}</span>
             </div>
         """.trimIndent()
         val DivDescription = if (basicUsage.description != "no description available") """
@@ -47,6 +47,15 @@ data class CommandUsage(
         </li>
         """.trimIndent()
     }
+}
+
+private fun String.replaceParam(): String {
+        return replace("<","<<")
+        .replace(">",">>")
+        .replace("<<","<must>")
+        .replace(">>","</must>")
+        .replace("[","<optional>")
+        .replace("]","</optional>")
 }
 
 data class CommandBasicUsage(

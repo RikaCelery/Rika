@@ -1,9 +1,9 @@
 package org.celery.utils.file
 
-import org.celery.Rika
-import org.celery.utils.commandline.runCommand
 import kotlinx.coroutines.delay
 import net.mamoe.mirai.utils.MiraiLogger
+import org.celery.Rika
+import org.celery.utils.commandline.runCommand
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -12,9 +12,10 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
 
+@Suppress("unused")
 object FileTools {
     private val logger = MiraiLogger.Factory.create(FileTools::class)
-    fun copyFile(source: File, target: File, overWrite: Boolean = false) {
+    private fun copyFile(source: File, target: File, overWrite: Boolean = false) {
         if (overWrite || !target.exists()) {
             val inputStream = FileInputStream(source)
             val outputStream = FileOutputStream(target)
@@ -119,84 +120,84 @@ object FileTools {
     /**
      * The number of bytes in a kilobyte.
      */
-    const val ONE_KB: Long = 1024
+    private const val ONE_KB: Long = 1024
 
     /**
      * The number of bytes in a kilobyte.
      *
      * @since 2.4
      */
-    val ONE_KB_BI = BigInteger.valueOf(ONE_KB)
+    val ONE_KB_BI: BigInteger = BigInteger.valueOf(ONE_KB)
 
     /**
      * The number of bytes in a megabyte.
      */
-    const val ONE_MB = ONE_KB * ONE_KB
+    private const val ONE_MB = ONE_KB * ONE_KB
 
     /**
      * The number of bytes in a megabyte.
      *
      * @since 2.4
      */
-    val ONE_MB_BI = ONE_KB_BI.multiply(ONE_KB_BI)
+    val ONE_MB_BI: BigInteger = ONE_KB_BI.multiply(ONE_KB_BI)
 
     /**
      * The number of bytes in a gigabyte.
      */
-    const val ONE_GB = ONE_KB * ONE_MB
+    private const val ONE_GB = ONE_KB * ONE_MB
 
     /**
      * The number of bytes in a gigabyte.
      *
      * @since 2.4
      */
-    val ONE_GB_BI = ONE_KB_BI.multiply(ONE_MB_BI)
+    val ONE_GB_BI: BigInteger = ONE_KB_BI.multiply(ONE_MB_BI)
 
     /**
      * The number of bytes in a terabyte.
      */
-    const val ONE_TB = ONE_KB * ONE_GB
+    private const val ONE_TB = ONE_KB * ONE_GB
 
     /**
      * The number of bytes in a terabyte.
      *
      * @since 2.4
      */
-    val ONE_TB_BI = ONE_KB_BI.multiply(ONE_GB_BI)
+    val ONE_TB_BI: BigInteger = ONE_KB_BI.multiply(ONE_GB_BI)
 
     /**
      * The number of bytes in a petabyte.
      */
-    const val ONE_PB = ONE_KB * ONE_TB
+    private const val ONE_PB = ONE_KB * ONE_TB
 
     /**
      * The number of bytes in a petabyte.
      *
      * @since 2.4
      */
-    val ONE_PB_BI = ONE_KB_BI.multiply(ONE_TB_BI)
+    val ONE_PB_BI: BigInteger = ONE_KB_BI.multiply(ONE_TB_BI)
 
     /**
      * The number of bytes in an exabyte.
      */
-    const val ONE_EB = ONE_KB * ONE_PB
+    private const val ONE_EB = ONE_KB * ONE_PB
 
     /**
      * The number of bytes in an exabyte.
      *
      * @since 2.4
      */
-    val ONE_EB_BI = ONE_KB_BI.multiply(ONE_PB_BI)
+    val ONE_EB_BI: BigInteger = ONE_KB_BI.multiply(ONE_PB_BI)
 
     /**
      * The number of bytes in a zettabyte.
      */
-    val ONE_ZB = BigInteger.valueOf(ONE_KB).multiply(BigInteger.valueOf(ONE_EB))
+    private val ONE_ZB: BigInteger = BigInteger.valueOf(ONE_KB).multiply(BigInteger.valueOf(ONE_EB))
 
     /**
      * The number of bytes in a yottabyte.
      */
-    val ONE_YB = ONE_KB_BI.multiply(ONE_ZB)
+    val ONE_YB: BigInteger = ONE_KB_BI.multiply(ONE_ZB)
 
     /**
      * An empty array of type `File`.
@@ -222,14 +223,14 @@ object FileTools {
     }
 
 
-    fun byteCountToDisplaySize(fileSize: BigInteger?): String {
+    private fun byteCountToDisplaySize(fileSize: BigInteger?): String {
         var unit = FileSize.BYTE.unit
         var fileSizeInUnit = BigDecimal.ZERO
         var `val`: String
         for (fs in FileSize.values()) {
             val size_bd = BigDecimal(fileSize)
             fileSizeInUnit = size_bd.divide(BigDecimal(fs.byteCount), 5, ROUNDING_MODE)
-            if (fileSizeInUnit.compareTo(BigDecimal.ONE) >= 0) {
+            if (fileSizeInUnit >= BigDecimal.ONE) {
                 unit = fs.unit
                 break
             }
@@ -237,10 +238,9 @@ object FileTools {
 
         // always round so that at least 3 numerics are displayed (###, ##.#, #.##)
         `val` =
-            if (fileSizeInUnit.divide(BigDecimal.valueOf(100.0), RoundingMode.DOWN).compareTo(BigDecimal.ONE) >= 0) {
+            if (fileSizeInUnit.divide(BigDecimal.valueOf(100.0), RoundingMode.DOWN) >= BigDecimal.ONE) {
                 fileSizeInUnit.setScale(0, ROUNDING_MODE).toString()
-            } else if (fileSizeInUnit.divide(BigDecimal.valueOf(10.0), RoundingMode.DOWN)
-                    .compareTo(BigDecimal.ONE) >= 0
+            } else if (fileSizeInUnit.divide(BigDecimal.valueOf(10.0), RoundingMode.DOWN) >= BigDecimal.ONE
             ) {
                 fileSizeInUnit.setScale(1, ROUNDING_MODE).toString()
             } else {

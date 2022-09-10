@@ -1,8 +1,5 @@
 package org.celery.utils.sql
 
-import org.celery.utils.file.md5
-import org.celery.utils.group.truncate
-import org.celery.utils.http.HttpUtils
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -16,6 +13,9 @@ import net.mamoe.mirai.utils.MiraiLogger
 import org.celery.Rika
 import org.celery.config.main.MainConfig
 import org.celery.config.main.SqlConfig
+import org.celery.utils.file.md5
+import org.celery.utils.group.truncate
+import org.celery.utils.http.HttpUtils
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.sql.*
@@ -23,13 +23,13 @@ import java.sql.*
 
 object MessageEventSql {
     val logger = MiraiLogger.Factory.create(this.javaClass)
-    var JDBC_DRIVER = "com.mysql.cj.jdbc.Driver"
-    var DB_URL = SqlConfig.eventsUrl
+    private var JDBC_DRIVER = "com.mysql.cj.jdbc.Driver"
+    private var DB_URL = SqlConfig.eventsUrl
 
     // 数据库的用户名与密码，需要根据自己的设置
-    var USER = SqlConfig.eventsName
-    var PASS = SqlConfig.eventsPass
-    var conn: Connection? = null
+    private var USER = SqlConfig.eventsName
+    private var PASS = SqlConfig.eventsPass
+    private var conn: Connection? = null
 
     //初始化
     init {
@@ -245,7 +245,7 @@ object MessageEventSql {
                 val url = fileMessage.toAbsoluteFile(group)!!.getUrl()
                 if (sender.id != 1436898372L) {
                     val fileTmp = url?.let { HttpUtils.downloadToFile(it) }
-                    fileTmp?.let {
+                    fileTmp?.let { it ->
                         val ext = fileMessage.name.substringAfterLast('.', "none")
                         val file = Rika.resolveDataFile("MessageDataBase\\File\\${it.nameWithoutExtension + '.' + ext}")
                             .apply { if (!this.parentFile.exists()) parentFile.mkdirs() }
@@ -363,7 +363,7 @@ object MessageEventSql {
             if (rs != null) {
                 while (rs.next()) {
                     // 通过字段检索
-                    var str = MessageSearchResult(rs.getInt("sendTime"), rs.getString("jsonStr"))
+                    val str = MessageSearchResult(rs.getInt("sendTime"), rs.getString("jsonStr"))
                     list.add(str)
                 }
             }
@@ -397,7 +397,7 @@ object MessageEventSql {
         forwarder: Long,
         hash: String
     ) {
-        var sql = "INSERT INTO qqmessage2.groupmessagesevent " +
+        val sql = "INSERT INTO qqmessage2.groupmessagesevent " +
                 "(sendTime, `group`, senderName, sender, permission, message, jsonStr,forwarder,hashcode)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
         try {
@@ -428,17 +428,17 @@ object MessageEventSql {
 
     fun addString(str: String, time: Int): Boolean {
 
-        var sql = "INSERT INTO qqmessage2.eventsdata " +
+        val sql = "INSERT INTO qqmessage2.eventsdata " +
                 "(time, `event`)" +
                 "VALUES (?, ?);"
-        try {
+        return try {
             conn!!.prepareStatement(sql).also {
                 it.setObject(1, time)
                 it.setObject(2, str)
             }.execute()
-            return true
+            true
         } catch (e: SQLIntegrityConstraintViolationException) {
-            return false
+            false
         } catch (e: Exception) {
             e.printStackTrace()
             throw e

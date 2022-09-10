@@ -145,7 +145,7 @@ object GroupUploadTool {
                 throw e
             }
         } catch (e: Exception) {
-            if (e.toString().contains("group space not enough") == true) {
+            if (e.toString().contains("group space not enough")) {
                 if (autoHandleException) {
                     group.sendMessage("上传失败，群空间不足")
                     logger.error("群空间不足，无法上传文件: $file,在: $group")

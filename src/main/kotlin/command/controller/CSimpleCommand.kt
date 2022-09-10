@@ -1,4 +1,4 @@
-package com.celery.rika.commands.callcontrol
+package command.controller
 
 import net.mamoe.mirai.console.command.Command.Companion.allNames
 import net.mamoe.mirai.console.command.CommandOwner
@@ -6,11 +6,16 @@ import net.mamoe.mirai.console.command.SimpleCommand
 import net.mamoe.mirai.console.command.descriptor.CommandArgumentContext
 import net.mamoe.mirai.console.command.descriptor.EmptyCommandArgumentContext
 import net.mamoe.mirai.console.permission.Permission
-import org.celery.command.controller.*
+import org.celery.command.controller.BlockRunMode
+import org.celery.command.controller.BlockRunMode.Subject
 import org.celery.command.controller.BlockRunMode.User
+import org.celery.command.controller.CCommand
+import org.celery.command.controller.CommandBasicUsage
+import org.celery.command.controller.CommandUsage
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.valueParameters
 
+@Suppress("unused")
 /**
  * 一个简单指令，不能进行调用控制
  */
@@ -24,11 +29,12 @@ open class CSimpleCommand(
 ) : CCommand, SimpleCommand(
     owner, primaryName, secondaryNames = secondaryNames, description, parentPermission, overrideContext
 ) {
+    override var showTip: Boolean = true
 
     annotation class Example(val value: String)
 
     override fun getUsages(): List<CommandBasicUsage> {
-        val func = this::class.functions.single { it.annotations.any { it is Handler } }
+        val func = this::class.functions.single { it -> it.annotations.any { it is Handler } }
         val example = func.annotations.filterIsInstance<Example>().singleOrNull()
         val prefix = if (prefixOptional) "" else "/"
         return listOf(
@@ -43,7 +49,7 @@ open class CSimpleCommand(
                 },
                 params = func.valueParameters.map {
                     CommandUsage.CommandParam(
-                        it.name ?: it.type::class.simpleName ?: "unknow-command-name",
+                        it.name ?: it.type::class.simpleName ?: "unknown-command-name",
                         it.isOptional
                     )
                 },
@@ -55,10 +61,11 @@ open class CSimpleCommand(
         )
     }
 
-    override var defultCountLimit: Int = 10
+    override var defaultCountLimit: Int = 10
     override val commandId: String = primaryName
-    override var defultCallCountLimitMode: BlockRunMode = User
-    override var defultMinCooldown: Int = 3
-    override var defultEnable: Boolean = true
+    override var defaultCallCountLimitMode: BlockRunMode = User
+    override var defaultCoolDown: Long = 3
+    override var defaultBlockRunModeMode: BlockRunMode = Subject
+    override var defaultEnable: Boolean = true
 
 }

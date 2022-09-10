@@ -96,7 +96,7 @@ class ProgressBar private constructor() {
     /**
      * 步进
      */
-    fun step() {
+    private fun step() {
         checkStatus()
         checkInit()
         cleanProcessBar()
@@ -108,7 +108,7 @@ class ProgressBar private constructor() {
     /**
      * 绘制进度条
      */
-    fun drawProgressBar() {
+    private fun drawProgressBar() {
         Rika.logger.info(
             String.format(
                 "%3d%%├%s%s┤",
@@ -149,7 +149,7 @@ class ProgressBar private constructor() {
      *
      * @return
      */
-    fun hasFinished(): Boolean {
+    private fun hasFinished(): Boolean {
         return index >= barLength
     }
 
@@ -201,7 +201,7 @@ class ProgressBar private constructor() {
         private const val waitChar = ' '
 
         //        private const val waitChar = '─'
-        fun build(): ProgressBar {
+        private fun build(): ProgressBar {
             return ProgressBar()
         }
 
@@ -211,7 +211,7 @@ class ProgressBar private constructor() {
             return progressBar
         }
 
-        fun build(index: Int, step: Int): ProgressBar {
+        private fun build(index: Int, step: Int): ProgressBar {
             val progressBar = build(step)
             progressBar.index = index
             return progressBar

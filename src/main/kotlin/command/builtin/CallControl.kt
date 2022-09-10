@@ -7,7 +7,6 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.utils.cast
 import org.celery.Rika
-import org.celery.command.controller.CCommand
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.Limitable
 import org.celery.command.controller.RegexCommand
@@ -15,18 +14,20 @@ import org.celery.utils.group.GroupTools
 import org.celery.utils.permission.isSuperUser
 
 object CallControl:RegexCommand(
-    "次数限制","设置(.*)次数\\s?(\\d+)\\s?(.*)".toRegex()
+    commandId = "次数限制",
+    normalUsage = "设置<功能名>次数[次数][群成员]",
+    regex = "设置(.*)次数\\s?(\\d+)\\s?(.*)".toRegex()
 ){
     @Command
-    suspend fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
+    fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         val result = eventMatchResult.getResult()
         val user = GroupTools.getUserOrNull(subject,result.groupValues[3])
-        val command = Rika.allRegisterdCommand.find { it.commandId.equals(result.groupValues[1],true) }
+        val command = Rika.allRegisteredCommand.find { it.commandId.equals(result.groupValues[1],true) }
         val newLimit = result.groupValues[2].toIntOrNull()
         command?:return ExecutionResult.Ignored("command not found.")
         newLimit?:return ExecutionResult.Ignored("command not found.")
         if (getGlobalLimit()!=null&&newLimit>getGlobalLimit()!!&&sender.isSuperUser().not()){
-            return ExecutionResult.Faild(IllegalStateException("call limit can not greater than ${getGlobalLimit()}"))
+            return ExecutionResult.Failed(exception = IllegalStateException("call limit can not greater than ${getGlobalLimit()}"))
         }
         when(this){
             is GroupMessageEvent->{
@@ -52,6 +53,6 @@ object CallControl:RegexCommand(
         }
 
 
-        return ExecutionResult.Success()
+        return ExecutionResult.Success
     }
 }

@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 fun runCommand(
     cmd: List<String>,
-    workDir: File = File("C:\\Users\\Celery\\Desktop"),
+    workDir: File = File(".").canonicalFile,
     timeoutAmount: Long = 60L,
     timeUnit: TimeUnit = TimeUnit.SECONDS
 ): String? = runCatching {

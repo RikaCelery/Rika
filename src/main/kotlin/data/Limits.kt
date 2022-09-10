@@ -13,11 +13,11 @@ object Limits : AutoSavePluginData("limits") {
         contextual(SanityLevel::class, SanityLevel.serializer())
         contextual(AgeLimit::class, AgeLimit.serializer())
     }
-    val groupSanityLevel: MutableMap<Long, SanityLevel> by value()
-    val userSanityLevel: MutableMap<Long, MutableMap<Long, SanityLevel>> by value()
-    val groupR18: MutableMap<Long, AgeLimit> by value()
-    val userR18: MutableMap<Long, MutableMap<Long, AgeLimit>> by value()
-    val setuUseCount: MutableMap<Long, MutableMap<Long, Int>> by value()
+    private val groupSanityLevel: MutableMap<Long, SanityLevel> by value()
+    private val userSanityLevel: MutableMap<Long, MutableMap<Long, SanityLevel>> by value()
+    private val groupR18: MutableMap<Long, AgeLimit> by value()
+    private val userR18: MutableMap<Long, MutableMap<Long, AgeLimit>> by value()
+    private val setuUseCount: MutableMap<Long, MutableMap<Long, Int>> by value()
     private val setuUseLimit: MutableMap<Long, MutableMap<Long, Int>> by value()
     private val defaultSetuLimit: Int by value(5)
 
@@ -31,7 +31,7 @@ object Limits : AutoSavePluginData("limits") {
         return setuUseCount[groupId]!![userId]!!
     }
 
-    fun getCountLimit(userId: Long, groupId: Long): Int {
+    private fun getCountLimit(userId: Long, groupId: Long): Int {
         if (setuUseLimit[groupId] == null) {
             setuUseLimit[groupId] = mutableMapOf()
         }
@@ -51,7 +51,7 @@ object Limits : AutoSavePluginData("limits") {
     fun setAge(user: Long, subject: Long, age: AgeLimit) {
         when (user) {
             0L -> groupR18[subject] = age
-            else -> userR18[subject]?.set(user, age) ?: userR18.set(subject, mutableMapOf(user to age))
+            else -> userR18[subject]?.set(user, age) ?: kotlin.run{userR18[subject] = mutableMapOf(user to age)}
         }
     }
 
@@ -71,10 +71,8 @@ object Limits : AutoSavePluginData("limits") {
                     if (groupSanityLevel[subject] == null) {
                         groupSanityLevel[subject] = SanityLevel.WHITE
                     }
-                    userSanityLevel[subject]?.set(user, sanityLevel) ?: userSanityLevel.set(
-                        subject,
-                        mutableMapOf(user to sanityLevel)
-                    )
+                    userSanityLevel[subject]?.set(user, sanityLevel) ?: kotlin.run{userSanityLevel[subject] =
+                        mutableMapOf(user to sanityLevel)}
                 }
             }
         else
@@ -84,16 +82,14 @@ object Limits : AutoSavePluginData("limits") {
                     if (groupSanityLevel[subject] == null) {
                         groupSanityLevel[subject] = SanityLevel.WHITE
                     }
-                    userSanityLevel[subject]?.set(user, sanityLevel) ?: userSanityLevel.set(
-                        subject,
-                        mutableMapOf(user to sanityLevel)
-                    )
+                    userSanityLevel[subject]?.set(user, sanityLevel) ?: kotlin.run{userSanityLevel[subject] =
+                        mutableMapOf(user to sanityLevel)}
                 }
             }
 
     }
 
-    fun setCountNow(userId: Long, groupId: Long, count: Int) {
+    private fun setCountNow(userId: Long, groupId: Long, count: Int) {
         setuUseCount[groupId]!![userId] = count
     }
 

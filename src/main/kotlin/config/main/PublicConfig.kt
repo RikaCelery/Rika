@@ -3,23 +3,28 @@ package org.celery.config.main
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.plus
 import net.mamoe.mirai.utils.MiraiLogger
 import org.celery.Rika
-import org.celery.utils.file.createParentFolder
+import org.celery.utils.serialization.defaultJson
 import java.util.*
 
 object PublicConfig {
     private val logger by lazy {
         MiraiLogger.Factory.create(this::class)
     }
-    private val pluginConfigsFile = Rika.configFolder.resolve("pluginConfigs/pluginConfigs.json").createParentFolder()
-    private val mainSerializer = Json {
-        ignoreUnknownKeys = true
-        prettyPrint = true
-    }
+    private val pluginConfigsFile = Rika.configFolder.resolve("pluginConfigs.json")
+
+    val modules = mutableListOf<SerializersModule>()
+
     var jsonSerializer = Json {
         ignoreUnknownKeys = true
+        modules.forEach {
+            serializersModule += it
+        }
     }
+
 
     fun set(key: String, value: String) {
         pluginConfigs[key] = value
@@ -31,11 +36,11 @@ object PublicConfig {
 
     var pluginConfigs = mutableMapOf<String, String>()
     fun save() {
-        pluginConfigsFile.writeText(mainSerializer.encodeToString(pluginConfigs))
+        pluginConfigsFile.writeText(defaultJson.encodeToString(pluginConfigs))
     }
 
-    fun load() {
-        pluginConfigs = mainSerializer.decodeFromString(pluginConfigsFile.readText())
+    private fun load() {
+        pluginConfigs = defaultJson.decodeFromString(pluginConfigsFile.readText())
     }
 
     fun reload() {
@@ -45,7 +50,7 @@ object PublicConfig {
         } catch (_: Exception) {
             save()
             load()
-            logger.warning("配置文件加载出错,已重新生成")
+            logger.warning("插件配置文件加载出错,已重新生成")
         }
     }
 

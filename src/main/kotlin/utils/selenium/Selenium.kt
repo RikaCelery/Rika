@@ -1,9 +1,10 @@
 package org.celery.utils.selenium
 
-import org.celery.utils.file.FileTools
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.warning
+import org.celery.Rika.seleniums
+import org.celery.utils.file.FileTools
 import org.openqa.selenium.*
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -16,7 +17,7 @@ import java.time.Duration
 open class Selenium(val debug: Boolean = true) {
     private val logger = MiraiLogger.Factory.create(this::class)
     private var used = false
-    val driver by lazy {
+    private val driver by lazy {
         used = true
         val options = ChromeOptions()
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL)
@@ -111,7 +112,7 @@ open class Selenium(val debug: Boolean = true) {
             val js = driver as JavascriptExecutor
             val yS = element.location.y
             val xS = element.location.x
-            js.executeScript("scrollTo(${xS},${yS})")
+            js.executeScript("""scrollTo($xS,$yS)""")
         }
 //        val pos = element.location
 //        val width = element.size.getWidth()
@@ -206,8 +207,9 @@ open class Selenium(val debug: Boolean = true) {
 
     init {
         val WORKING_DIR = File("./").canonicalPath
-        logger.info("当前工作目录: " + WORKING_DIR)
+        logger.info("当前工作目录: $WORKING_DIR")
         System.setProperty("webdriver.chrome.driver", "$WORKING_DIR\\chromedriver.exe")
+        seleniums.add(this)
 
     }
 
