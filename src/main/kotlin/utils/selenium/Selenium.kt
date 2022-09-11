@@ -103,7 +103,7 @@ open class Selenium(val debug: Boolean = true) {
         ).toString().toInt()
         driver.manage().window().size = Dimension(
             dimension?.width?.let { if (it == 0) 1000 else it } ?: (width + 30),
-            dimension?.height?.let { if (it == 0) height else it } ?: height
+            dimension?.height?.let { if (it == 0) (height+30) else it } ?: (height+30)
         )
 
         logger.info("reSize耗时: ${System.currentTimeMillis() - time}ms")

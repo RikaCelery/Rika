@@ -1,15 +1,14 @@
 package org.celery.utils.http
 
+
 import net.mamoe.mirai.utils.MiraiLogger
 import okhttp3.*
 import org.apache.commons.codec.binary.Hex
+import org.brotli.dec.BrotliInputStream
 import org.celery.config.main.ProxyConfigs
 import org.celery.utils.ProgressBar
 import org.celery.utils.file.FileTools
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
+import java.io.*
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URL
@@ -190,7 +189,7 @@ object HttpUtils {
      */
     @Synchronized
     fun getStringContent(url: String, cache: Boolean = false): String {
-        println("have cache: ${caches[url] != null}")
+        logger.debug("have cache: ${caches[url] != null}")
         if (caches[url] != null && cache) {
             println("返回已缓存请求: $url")
             return caches[url]!!
@@ -233,6 +232,25 @@ object HttpUtils {
             }
             return content
         }
+        else if (response.headers["Content-Encoding"] == "br") {
+            logger.info("Content-Encoding: br")
+            // 解压数据
+            val reader = BufferedReader(InputStreamReader(BrotliInputStream(response.body!!.byteStream())))
+
+            val content = buildString {
+                var line = ""
+                while (reader.readLine()?.also { line=it }!=null){
+                   append(line)
+                }
+            }
+            logger.debug("br解压结果：size = ${content.length}")
+            response.close()
+            if (cache && response.code == 200) {
+                caches[url] = content
+                logger.debug("cached $url")
+            }
+            return content
+        }
         val content = response.body?.charStream().use {
             it?.readText()
         }
@@ -254,7 +272,20 @@ object HttpUtils {
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.39"
             )
             .build()
-        return getClient().newCall(request).execute()
+        var response: Response? = null
+        var n = 0
+        while (response == null) {
+            if (n > 5)
+                throw TimeoutException("failed to connect, try 5 times.")
+            try {
+                response = getClient().newCall(request).execute()
+            } catch (e: Exception) {
+                println(e)
+                Thread.sleep(2000)
+            }
+            n++
+        }
+        return response
     }
 
     fun downloader(url: String): ByteArray {

@@ -10,7 +10,7 @@ import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeUtils
 import kotlin.random.Random
 
-object MyLuck : RegexCommand("今日运气", "^?vdluck".toRegex(), normalUsage = "vdluck") {
+object MyLuck : RegexCommand("今日运气", "^vdluck".toRegex(), normalUsage = "vdluck") {
     override var defaultCountLimit: Int = 10
     override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.PureUser
     override var defaultCoolDown: Long = 1000

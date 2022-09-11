@@ -162,6 +162,11 @@ abstract class EventCommand<E : BotEvent>(
         return false
     }
 
+    open var blockGlobalAction: suspend E.()->Any={}
+    open var blockSubjectAction: suspend E.()->Any={}
+    open var blockUserAction: suspend E.()->Any={}
+    open var blockPureUserAction: suspend E.()->Any={}
+
     /**
      * 通过反射拿到Command Matcher返回true时执行指令
      */
@@ -187,7 +192,7 @@ abstract class EventCommand<E : BotEvent>(
         }
         return ExecutionResult.Error(IllegalStateException("no matching function"))
     }
-//    val callSizeGetMode =
+
     private fun List<Pair<KFunction<*>, Command>>.filterFunction(call: Call): KFunction<*>? {
         val maxOf = maxOf { it.second.repeat }
         if (getCountLimit(call) < maxOf) {
@@ -219,31 +224,6 @@ abstract class EventCommand<E : BotEvent>(
     }
 
 }
-
-class EventMatchResult(private val result: MatchResult?, private val index: Int = 0) {
-    operator fun get(index: Int) = result!!.groupValues[index]
-
-    @JvmName("getResult1")
-    fun getResult() = result ?: error("no match result there, it's not regex match command")
-    fun getAllMatches(): MutableList<String> {
-        val list = mutableListOf<String>()
-        var last: MatchResult? = getResult()
-        while (last != null) {
-            list.add(last.value)
-            last = last.next()
-        }
-        return list
-    }
-
-    fun getIndexedResult(): Pair<Int, MatchResult> {
-        return index to result!!
-    }
-}
-
-private fun Contact.isSuperUser(): Boolean {
-    return id == botOwner || (id in superUsers)
-}
-
 
 /**
  * @param normalUsage 用户使用时应该输入的指令前缀
@@ -286,5 +266,29 @@ abstract class RegexCommand(
             if (subResult != null) return subResult
         }
         return null
+    }
+}
+
+private fun Contact.isSuperUser(): Boolean {
+    return id == botOwner || (id in superUsers)
+}
+
+class EventMatchResult(private val result: MatchResult?, private val index: Int = 0) {
+    operator fun get(index: Int) = result!!.groupValues[index]
+
+    @JvmName("getResult1")
+    fun getResult() = result ?: error("no match result there, it's not regex match command")
+    fun getAllMatches(): MutableList<String> {
+        val list = mutableListOf<String>()
+        var last: MatchResult? = getResult()
+        while (last != null) {
+            list.add(last.value)
+            last = last.next()
+        }
+        return list
+    }
+
+    fun getIndexedResult(): Pair<Int, MatchResult> {
+        return index to result!!
     }
 }

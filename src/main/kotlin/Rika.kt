@@ -12,6 +12,7 @@ import command.common.group.funny.marry_member.MarryMemberCommandBeXioaSan
 import command.common.group.funny.marry_member.data.MarryMemberData
 import command.common.group.manage.AdvanceMute
 import command.common.group.manage.KickMember
+import command.common.what_anime.WhatAnime
 import config.pixiv.PixivConfigs
 import config.pixiv.config.ConfigData
 import data.Limits
@@ -38,6 +39,7 @@ import org.celery.command.common.group.`fun`.banme.Banme
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricity
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricityAdd
 import org.celery.command.common.nbnhhsh.Nbnhhsh
+import org.celery.command.common.saucenao.SauceNaoPicSearch
 import org.celery.command.common.temp_pick_moon_cake.PickMoonCake
 import org.celery.command.controller.CCommand
 import org.celery.command.controller.CommandExecutor
@@ -71,7 +73,7 @@ object Rika : KotlinPlugin(
         logger.info("reload data")
         MainConfig.reload()
         ProxyConfigs.reload()
-        PublicConfig.reload()
+        PublicConfig
         SqlConfig.reload()
         ConfigData
         PixivConfigs.reload()
@@ -94,6 +96,7 @@ object Rika : KotlinPlugin(
         ConsoleFunctionCallControlEnable.register()
         ConsoleFunctionCallControlDisable.register()
         FunctionCallControl.reg()
+        EditConfig.reg()
         AddBlackList.reg()
         CallControl.reg()
         //common commands
@@ -122,6 +125,8 @@ object Rika : KotlinPlugin(
         Github.reg()
         NetEase.reg()
         PickMoonCake.reg()
+        SauceNaoPicSearch.reg()
+        WhatAnime.reg()
         // add task
         BotTaskController.add(CleanCacheTask())
         BotTaskController.add(CommandDataAutoSave())

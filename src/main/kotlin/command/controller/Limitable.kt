@@ -192,11 +192,11 @@ interface Limitable {
 
     fun disable() {
         Rika.logger.debug("$commandId disabled.")
-        defaultEnable = false
+        enableMap[commandId] = false
     }
     fun enable() {
         Rika.logger.debug("$commandId enabled.")
-        defaultEnable = true
+        enableMap[commandId] = true
     }
 
     /**
@@ -364,7 +364,7 @@ interface Limitable {
             Rika.logger.debug("permission check failed, command is disabled for subject(${call.subjectId}).")
             return false
         }
-        if (!defaultEnable) {
+        if (!(enableMap[commandId]?:defaultEnable)) {
             Rika.logger.debug("permission check failed, command disabled.")
             return false
         }

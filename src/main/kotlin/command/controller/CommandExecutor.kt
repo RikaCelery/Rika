@@ -10,10 +10,13 @@ import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.GroupEvent
 import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.message.data.SingleMessage
+import net.mamoe.mirai.message.data.findIsInstance
 import net.mamoe.mirai.utils.safeCast
 import org.celery.Rika
 import org.celery.command.controller.BlockRunMode.*
 import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.coroutines.CoroutineContext
 
 /*
@@ -28,6 +31,8 @@ object CommandExecutor : SimpleListenerHost() {
     private val commands = hashSetOf<EventCommand<*>>()
     fun add(c: EventCommand<*>) = commands.add(c)
 
+    val lastMessages = ConcurrentLinkedDeque<MessageEvent>()
+
     /**
      * 执行指令
      */
@@ -36,13 +41,17 @@ object CommandExecutor : SimpleListenerHost() {
         val result: ExecutionResult = when (eventCommand.getBlockRunMode(call.commandId)) {
             Global -> with(Limitable) {
                 if (blockGlobal[call.commandId] == true) {
+                    eventCommand.safeCast<RegexCommand>()?.blockGlobalAction?.let {
+                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
+                    }
+
                     Ignored("blockGlobal blocked.")
                 } else {
                     blockGlobal[call.commandId] = true
                     val executionResult = try {
                         reactor()
-                    }catch (e: InvocationTargetException){
-                        Failed(e.cause,e.cause?.message)
+                    } catch (e: InvocationTargetException) {
+                        Failed(e.cause, e.cause?.message)
                     } catch (e: Exception) {
                         Failed(exception = e, message = e.message)
                     } finally {
@@ -54,6 +63,9 @@ object CommandExecutor : SimpleListenerHost() {
             Subject -> with(Limitable) {
                 val commandName = call.commandId
                 if (blockSubject[commandName]?.contains(call.subjectId) == true) {
+                    eventCommand.safeCast<RegexCommand>()?.blockSubjectAction?.let {
+                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
+                    }
                     Ignored("blockSubject blocked.")
                 } else {
                     blockSubject[commandName]?.add(call.subjectId) ?: blockSubject.put(
@@ -62,8 +74,8 @@ object CommandExecutor : SimpleListenerHost() {
                     )
                     val executionResult = try {
                         reactor()
-                    }catch (e: InvocationTargetException){
-                        Failed(e.cause,e.cause?.message)
+                    } catch (e: InvocationTargetException) {
+                        Failed(e.cause, e.cause?.message)
                     } catch (e: Exception) {
                         Failed(exception = e, message = e.message)
                     } finally {
@@ -74,6 +86,9 @@ object CommandExecutor : SimpleListenerHost() {
             }
             User -> with(Limitable) {
                 if (blockUser[call.commandId]?.contains(call.userId) == true) {
+                    eventCommand.safeCast<RegexCommand>()?.blockUserAction?.let {
+                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
+                    }
                     Ignored("blockUser blocked.")
                 } else {
                     blockUser[call.commandId]?.add(call.userId) ?: blockUser.put(
@@ -82,8 +97,8 @@ object CommandExecutor : SimpleListenerHost() {
                     )
                     val executionResult = try {
                         reactor()
-                    }catch (e: InvocationTargetException){
-                        Failed(e.cause,e.cause?.message)
+                    } catch (e: InvocationTargetException) {
+                        Failed(e.cause, e.cause?.message)
                     } catch (e: Exception) {
                         Failed(exception = e, message = e.message)
                     } finally {
@@ -95,6 +110,9 @@ object CommandExecutor : SimpleListenerHost() {
             }
             PureUser -> with(Limitable) {
                 if (blockUser[call.commandId]?.contains(call.userId) == true) {
+                    eventCommand.safeCast<RegexCommand>()?.blockPureUserAction?.let {
+                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
+                    }
                     Ignored("blockPureUser blocked.")
                 } else {
                     blockUser[call.commandId]?.add(call.userId) ?: blockUser.put(
@@ -103,8 +121,8 @@ object CommandExecutor : SimpleListenerHost() {
                     )
                     val executionResult = try {
                         reactor()
-                    }catch (e: InvocationTargetException){
-                        Failed(e.cause,e.cause?.message)
+                    } catch (e: InvocationTargetException) {
+                        Failed(e.cause, e.cause?.message)
                     } catch (e: Exception) {
                         Failed(exception = e, message = e.message)
                     } finally {
@@ -122,9 +140,29 @@ object CommandExecutor : SimpleListenerHost() {
                 eventCommand.addCall(call)
             }
             is Failed -> {
-                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage("在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${result.exception?.message?:result.message?.let { if (it.length>100) it.substring(0..100) else it }}")
-                    ?:fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage("在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${result.exception?.message?:result.message?.let { if (it.length>100) it.substring(0..100) else it }}")
-                logger.error("exception happened when executing $call caused by ${result.exception}.${result.exception?.stackTraceToString()?.let { "\n$it" }}")
+                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage(
+                    "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
+                        result.exception?.message ?: result.message?.let {
+                            if (it.length > 100) it.substring(
+                                0..100
+                            ) else it
+                        }
+                    }"
+                )
+                    ?: fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage(
+                        "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
+                            result.exception?.message ?: result.message?.let {
+                                if (it.length > 100) it.substring(
+                                    0..100
+                                ) else it
+                            }
+                        }"
+                    )
+                logger.error(
+                    "exception happened when executing $call caused by ${result.exception}.${
+                        result.exception?.stackTraceToString()?.let { "\n$it" }
+                    }"
+                )
             }
             is Ignored -> {
                 logger.debug("ignore reason: ${result.reason}.")
@@ -133,10 +171,30 @@ object CommandExecutor : SimpleListenerHost() {
                 logger.warning("unknown status, not add.")
             }
             is Error -> {
-                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage("在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${result.cause?.message?.let { if (it.length>100) it.substring(0..100) else it }}")
-                    ?:fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage("在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${result.cause?.message?.let { if (it.length>100) it.substring(0..100) else it }}")
+                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage(
+                    "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
+                        result.cause?.message?.let {
+                            if (it.length > 100) it.substring(
+                                0..100
+                            ) else it
+                        }
+                    }"
+                )
+                    ?: fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage(
+                        "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
+                            result.cause?.message?.let {
+                                if (it.length > 100) it.substring(
+                                    0..100
+                                ) else it
+                            }
+                        }"
+                    )
 
-                logger.error("internal error happened when executing $call caused by ${result.cause}.${result.cause?.stackTraceToString()?.let { "\n$it" }}")
+                logger.error(
+                    "internal error happened when executing $call caused by ${result.cause}.${
+                        result.cause?.stackTraceToString()?.let { "\n$it" }
+                    }"
+                )
             }
             is LimitCall -> {
                 eventCommand.addCall(call)
@@ -156,6 +214,11 @@ object CommandExecutor : SimpleListenerHost() {
      */
     @EventHandler
     suspend fun MessageEvent.listen() {
+        val filter = lastMessages.filter { it.sender == sender && it.subject == subject }
+        if (filter.size > 2) {
+            lastMessages.remove(filter.first())
+        }
+        lastMessages.add(this)
         for (cmd in commands.sortedByDescending { it.priority }) {
 //            println(cmd.commandId)
             val matches = cmd.matches(this@listen)
@@ -173,7 +236,7 @@ object CommandExecutor : SimpleListenerHost() {
                     ) {
                         logger.debug("executing...")
                         runBlocking {
-                            cmd.reactor(matches, this@listen,call)
+                            cmd.reactor(matches, this@listen, call)
                         }
                     }.broadcast()
                 }
@@ -187,4 +250,10 @@ object CommandExecutor : SimpleListenerHost() {
     override fun handleException(context: CoroutineContext, exception: Throwable) {
         exception.printStackTrace()
     }
+
+
+    inline fun <reified M : SingleMessage?> lastInstanceOrNull(messageEvent: MessageEvent): M? =
+        lastMessages.reversed().find { it.sender==messageEvent.sender&&it.subject==messageEvent.subject&&it.message.findIsInstance<M>()!=null }?.message?.findIsInstance<M>()
+
+
 }

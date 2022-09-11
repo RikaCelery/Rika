@@ -51,8 +51,8 @@ suspend fun GroupMessageEvent.nextOperatorMessage(
 
 suspend fun MessageEvent.getConfirm(
     tip: String,
-    postFix: String = ",您确定吗[Y/N],请在60s内确认",
     timeout: Int = 60,
+    postFix: String = ",您确定吗[Y/N],请在${timeout}s内确认",
     TimeoutMsg: String? = null,
     autoRecall: Boolean = false,
 ): Boolean = nextMessage(
