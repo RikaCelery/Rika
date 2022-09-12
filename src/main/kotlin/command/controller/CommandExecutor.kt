@@ -215,7 +215,7 @@ object CommandExecutor : SimpleListenerHost() {
     @EventHandler
     suspend fun MessageEvent.listen() {
         val filter = lastMessages.filter { it.sender == sender && it.subject == subject }
-        if (filter.size > 2) {
+        if (filter.size >= 2) {
             lastMessages.remove(filter.first())
         }
         lastMessages.add(this)

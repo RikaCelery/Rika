@@ -3,6 +3,8 @@ package org.celery.command.controller
 import events.ExecutionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.util.cast
 import net.mamoe.mirai.console.util.safeCast
 import net.mamoe.mirai.contact.*
@@ -38,6 +40,12 @@ abstract class EventCommand<E : BotEvent>(
     open val logger = MiraiLogger.Factory.create(this::class)
     override val coroutineContext: CoroutineContext = EmptyCoroutineContext + SupervisorJob()
 
+    companion object{
+        val limit = mutableListOf<Call>()
+    }
+    open fun E.setCoolDown(time: Int): Boolean {
+        return false
+    }
     enum class ExecutePermission {
         Console, SuperUser, Owner, Operator, AnyMember
     }
@@ -251,6 +259,19 @@ abstract class RegexCommand(
                 commandId = commandId
             )
         )
+    }
+
+    override fun MessageEvent.setCoolDown(time: Int): Boolean {
+        val call = Call(commandId, sender.id, subject.id)
+        if (limit.any { it.commandId==call.commandId&&it.userId==call.userId&&it.subjectId==call.subjectId } )   return true
+        else{
+            limit.add(call)
+            launch {
+                delay(time*1000L)
+                limit.remove(call)
+            }
+            return false
+        }
     }
 
     override var showTip: Boolean = true

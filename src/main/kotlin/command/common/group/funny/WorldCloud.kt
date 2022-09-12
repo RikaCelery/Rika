@@ -1,4 +1,4 @@
-package command.common.group
+package org.celery.command.common.group.funny
 
 import events.ExecutionResult
 import net.mamoe.mirai.event.events.GroupMessageEvent

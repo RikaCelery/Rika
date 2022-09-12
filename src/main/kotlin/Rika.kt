@@ -6,7 +6,6 @@ import command.common.baidu_pic_search.BaiduPicSearchCommand
 import command.common.funny.speak_something_shit.SpeakSomeShitAdd
 import command.common.game.genshin.GenshinResourceCommand
 import command.common.game.genshin.grass_cutter.GrassCutterStatCommand
-import command.common.group.WorldCloud
 import command.common.group.funny.marry_member.MarryMemberCommand
 import command.common.group.funny.marry_member.MarryMemberCommandBeXioaSan
 import command.common.group.funny.marry_member.data.MarryMemberData
@@ -36,6 +35,8 @@ import org.celery.command.common.funny.emoji_mix.EmojiMix
 import org.celery.command.common.funny.speak_something_shit.SpeakSomeShit
 import org.celery.command.common.github.Github
 import org.celery.command.common.group.`fun`.banme.Banme
+import org.celery.command.common.group.funny.WorldCloud
+import org.celery.command.common.group.funny.marry_member.MarryMemberCommandDivoce
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricity
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricityAdd
 import org.celery.command.common.nbnhhsh.Nbnhhsh
@@ -102,6 +103,7 @@ object Rika : KotlinPlugin(
         //common commands
         MarryMemberCommand.reg()
         MarryMemberCommandBeXioaSan.reg()
+        MarryMemberCommandDivoce.reg()
         GrassCutterStatCommand.reg()
         Banme.reg()
         WorldCloud.reg()

@@ -28,10 +28,6 @@ object AdvanceMute : RegexCommand(
         val time: String = regex1.find(eventMatchResult[1])?.value?.trim()
                 ?: "120s"
         val member = eventMatchResult[1].replace(regex1, "").ifBlank { null }
-        println(eventMatchResult.getResult().groupValues)
-        println(eventMatchResult[1])
-        println(time)
-        println(member)
 
         member ?: return ExecutionResult.Ignored("member 为空") //member 为空退出
         if (member == "list") {

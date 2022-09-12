@@ -26,6 +26,8 @@ object EditConfig:RegexCommand(
         if (getConfirm("${PublicConfig[key]}=>$value")){
             PublicConfig[key]=value
             sendMessage("成功, value:${PublicConfig[key]}")
+            return ExecutionResult.Ignored()
+
         }
         sendMessage("取消, value:${PublicConfig[key]}")
         return ExecutionResult.Ignored()
