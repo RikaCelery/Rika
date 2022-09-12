@@ -6,20 +6,23 @@ import command.common.group.funny.marry_member.data.MarryMemberData.getWife
 import command.common.group.funny.marry_member.data.MarryMemberData.getXiaoSan
 import command.common.group.funny.marry_member.data.MarryMemberData.newMap
 import command.common.group.funny.marry_member.model.MarryResult
-import command.common.group.funny.marry_member.model.MarryResult.MarryType.Normal
-import command.common.group.funny.marry_member.model.MarryResult.MarryType.XiaoSan
+import command.common.group.funny.marry_member.model.MarryResult.MarryType.*
 import events.ExecutionResult
+import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Member
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.cast
+import org.celery.command.controller.Call
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.group.GroupTools
 import org.celery.utils.http.HttpUtils.downloader
+import org.celery.utils.number.probability
 import org.celery.utils.sendMessage
+import org.celery.utils.time.TimeConsts
 import java.time.LocalDateTime
 import kotlin.random.Random
 
@@ -34,6 +37,10 @@ object MarryMemberCommand : RegexCommand(
         val (index, match) = eventMatchResult.getIndexedResult()
         val target = GroupTools.getUserOrNull(group, match.groupValues[1].trim())?.also {
         }?.cast<Member>()
+        if (target!=null&&setCoolDown(TimeConsts.HOUR)){
+            sendMessage("爬，不许娶了")
+            return ExecutionResult.LimitCall
+        }
         //自己娶了别人或者被娶了，当小三不处理
         if (MarryMemberData[group.id, sender.id] != null) {
             // 被娶了
@@ -78,24 +85,14 @@ object MarryMemberCommand : RegexCommand(
                 sendMessage(message1)
                 return ExecutionResult.Success
             }
-//            //当小三
-//            val qingRen = sender.getQingren()
-//            if (qingRen != null) {
-//                sendMessage(buildMessageChain {
-//                    val member1 = group[qingRen]!!
-//                    val image = downloader(member1.avatarUrl).inputStream().toExternalResource().use {
-//                        group.uploadImage(it)
-//                    }
-//                    +At(sender)
-//                    +PlainText("今天你已经当了")
-//                    +image
-//                    +PlainText("[${member1.nameCardOrNick}][${member1.id}]的小三🤗")
-//                })
-//                return ExecutionResult.Success
-//            }
+
+            if (MarryMemberData.isSingle(subject.id, sender.id)) {
+                sendMessage("娶勾八，你可是单身贵族\uD83E\uDD23")
+                return ExecutionResult.Success
+            }
         }
         //目标群友娶了别人或者被娶了，当小三不处理
-        if (target!=null&& MarryMemberData[group.id, target.id] != null) {
+        if (target != null && MarryMemberData[group.id, target.id] != null) {
             // 被娶了
             val husband = target.getHusband()
             if (husband != null) {
@@ -117,16 +114,25 @@ object MarryMemberCommand : RegexCommand(
                 }
                 val message1 = buildMessageChain {
                     +At(sender)
-                    +PlainText("\n[${member1.nameCardOrNick}][${member1.id}]")
+                    +PlainText("\n[${target.nameCardOrNick}][${target.id}]")
                     +image
-                    +PlainText("\n已经被[${target.nameCardOrNick}][${target.id}]娶了呦~")
+                    +PlainText("\n已经娶了[${member1.nameCardOrNick}][${member1.id}]呦~")
                 }
                 sendMessage(message1)
                 return ExecutionResult.Success
             }
+
+
+            if (MarryMemberData.isSingle(subject.id, target.id)) {
+                sendMessage("娶勾八，${target.nameCardOrNick}可是单身贵族🤣")
+                return ExecutionResult.Success
+            }
         }
-
-
+        //一半的几率成功
+        if (target!=null&&probability(0.5)) {
+            sendMessage("坏了,你被无情的拒绝了😭")
+            return ExecutionResult.LimitCall
+        }
         // 没有指定娶人
         val newMembers = group.members.toMutableList().apply {
             removeAll {
@@ -134,13 +140,30 @@ object MarryMemberCommand : RegexCommand(
             }
         }
         val random = Random(LocalDateTime.now().let { it.year + it.dayOfYear + group.id })
-        val member1 = newMembers.random(random)
-        return if (index==0)
-            marryWife(sender, target?:member1)
-        else
-            marryHusband(sender,target?:member1)
-    }
+        var member1 = newMembers.random(random)
+        while (member1.id == sender.id && newMembers.size > 1) {
+            member1 = newMembers.random(random)
+        }
+        if (target?.id==sender.id){
+           return marrySelf(sender)
 
+        }
+        if (member1.id == sender.id) {
+            sendMessage("恭喜你！！你没人要啦哈哈哈哈哈哈哈哈哈哈哈哈！！")
+            if (newMap[group.id] == null) newMap[group.id] = mutableListOf()
+            newMap[group.id]!!.add(
+                MarryResult(
+                    sender.id, 0L, Single
+                )
+            )
+
+            return ExecutionResult.Success
+        }
+        return if (index == 0)
+            marryWife(sender, target ?: member1)
+        else
+            marryHusband(sender, target ?: member1)
+    }
 
     private suspend fun GroupMessageEvent.marryWife(from: Member, target: Member): ExecutionResult.Success {
         if (newMap[group.id] == null) newMap[group.id] = mutableListOf()
@@ -151,10 +174,10 @@ object MarryMemberCommand : RegexCommand(
         )
 
         val message = buildMessageChain {
-            + At(from)
-            + PlainText("今天你的群老婆是")
-            + getImage(target)
-            + PlainText("[${target.nameCardOrNick}][${target.id}]哒")
+            +At(from)
+            +PlainText("今天你的群老婆是")
+            +getImage(target)
+            +PlainText("[${target.nameCardOrNick}][${target.id}]哒")
             //不可能发生
 //            val xiaoSan = target.getXiaoSan()
 //            if (xiaoSan != null && xiaoSan.isNotEmpty()) {
@@ -171,10 +194,10 @@ object MarryMemberCommand : RegexCommand(
         newMap[group.id]!!.add(MarryResult(from.id, target.id, Normal))
         val image = getImage(target)
         val message = buildMessageChain {
-            + At(from)
-            + PlainText("今天你的群老公是")
-            + image
-            + PlainText("[${target.nameCardOrNick}][${target.id}]哒")
+            +At(from)
+            +PlainText("今天你的群老公是")
+            +image
+            +PlainText("[${target.nameCardOrNick}][${target.id}]哒")
             // 不可能发生
 //            val xiaoSan = target.getXiaoSan()
 //            if (xiaoSan != null && xiaoSan.isNotEmpty()) {
@@ -185,9 +208,22 @@ object MarryMemberCommand : RegexCommand(
         return ExecutionResult.Success
     }
 
+    private suspend fun GroupMessageEvent.marrySelf(from: Member): ExecutionResult.Success {
+        newMap[group.id]!!.add(MarryResult(from.id, from.id, Single))
+        val message = buildMessageChain {
+            +At(from)
+            +PlainText("我去，自恋狂！！！")
+        }
+        group.sendMessage(message)
+        return ExecutionResult.Success
+    }
+    override suspend fun Bot.limitNotice(call: Call, finalLimit: Int) {
+
+    }
+
 }
 
-private suspend fun GroupMessageEvent.getImage(target: Member) :Image {
+private suspend fun GroupMessageEvent.getImage(target: Member): Image {
     return downloader(target.avatarUrl).inputStream().toExternalResource().use {
         group.uploadImage(it)
     }
@@ -201,14 +237,23 @@ object MarryMemberCommandBeXioaSan : RegexCommand(
     @Command
     suspend fun GroupMessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         val target = GroupTools.getUserOrNull(group, eventMatchResult.getResult().groupValues[1].trim())?.cast<Member>()
-        if (target==null){
+        if (target == null) {
             sendMessage("没找见这个人欸.")
             return ExecutionResult.LimitCall
         }
         if (newMap[group.id] == null) {
             newMap[group.id] = mutableListOf()
         }
+
+        if (setCoolDown(TimeConsts.HOUR)){
+            sendMessage("爬，不许当了")
+            return ExecutionResult.LimitCall
+        }
 //        if (newMap[group.id]?.any { it.wife == member.id } == true && newMap[group.id]?.any { it.husband == sender.id } == false) {
+        if (probability(0.2)) {
+            sendMessage("就你他妈天天NTR别人是吧？414plz")
+            return ExecutionResult.LimitCall
+        }
         if (target.getWife() != null && target.getHusband() == null) {
             val marryResult = MarryResult(
                 target.id, sender.id, XiaoSan
@@ -221,19 +266,19 @@ object MarryMemberCommandBeXioaSan : RegexCommand(
                 marryResult
             )
             val message = buildMessageChain {
-                + At(sender)
-                + PlainText("今天你当了")
-                + getImage(target)
-                + PlainText("[${target.nameCardOrNick}][${target.id}]的小三~")
+                +At(sender)
+                +PlainText("今天你当了")
+                +getImage(target)
+                +PlainText("[${target.nameCardOrNick}][${target.id}]的小三~")
                 val xiaoSanList = target.getXiaoSan()
-                if (xiaoSanList!=null&&xiaoSanList.isNotEmpty()){
+                if (xiaoSanList != null && xiaoSanList.isNotEmpty()) {
                     val xiaoSan = target.getXiaoSan()
-                    if (xiaoSan != null && xiaoSan.size>1) {
-                        +(PlainText("\n哦顺便说一下，还有${xiaoSan.size-1}个人在和你一起当他的小三哦~"))
+                    if (xiaoSan != null && xiaoSan.size > 1) {
+                        +(PlainText("\n哦顺便说一下，还有${xiaoSan.size - 1}个人在和你一起当他的小三哦~"))
                     }
-                    if (xiaoSanList.size in 3..4){
+                    if (xiaoSanList.size in 3..4) {
                         +PlainText("\n[${target.nameCardOrNick}][${target.id}]这么抢手的吗?")
-                    } else if ((xiaoSanList.size>=4)){
+                    } else if ((xiaoSanList.size >= 4)) {
                         +PlainText("\n我草你们是疯了吗?😨")
                     }
                 }
@@ -244,6 +289,8 @@ object MarryMemberCommandBeXioaSan : RegexCommand(
                 sendMessage("他已经被娶啦")
             else if (target.getWife() == null)
                 sendMessage("他还是单身呢")
+            else if (MarryMemberData.isSingle(group.id, target.id))
+                sendMessage("${target.nameCardOrNick}是高贵的单身人士！")
             else
                 sendMessage("unknown stat.")
         }

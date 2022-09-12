@@ -8,7 +8,7 @@ data class MarryResult(
     val success:Boolean=true
 ) {
     enum class MarryType {
-        Normal,XiaoSan
+        Normal,XiaoSan,Single
     }
     fun contains(id:Long): Boolean {
         return husband==id||wife==id

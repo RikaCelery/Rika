@@ -6,7 +6,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.content
-import net.mamoe.mirai.message.nextMessage
+import net.mamoe.mirai.message.nextMessageOrNull
 import java.util.concurrent.TimeoutException
 
 /**
@@ -22,7 +22,7 @@ suspend fun MessageEvent.nextMessage(
     val logmsg = subject.sendMessage(tip)
     val sub = subject
     val msg: MessageChain? = try {
-        nextMessage(timeout * 1000L) { predicate(it.message) }
+        nextMessageOrNull(timeout * 1000L) { predicate(it.message) }
     } catch (e:TimeoutException) {
         TimeoutMsg?.let { sub.sendMessage("$TimeoutMsg") }
         return null

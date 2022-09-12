@@ -22,4 +22,7 @@ object MarryMemberData:AutoSavePluginData("MarryMemberData"){
     fun Member.getXiaoSan() = newMap[this.group.id]?.filter { it.husband==id&&it.type== MarryResult.MarryType.XiaoSan }?.map{ it.wife }?.ifEmpty { null }
     fun Member.getQingren() = newMap[this.group.id]?.singleOrNull { it.wife==id&&it.type== MarryResult.MarryType.XiaoSan }?.husband
     fun contains(group: Group,id: Long) = newMap[group.id]?.any { it.contains(id) }==true
+    fun isSingle(groupId: Long, id: Long): Boolean {
+        return newMap[groupId]?.any { it.husband==id&&it.type==MarryResult.MarryType.Single }?:false
+    }
 }
