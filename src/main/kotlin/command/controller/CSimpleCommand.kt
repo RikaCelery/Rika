@@ -30,7 +30,7 @@ open class CSimpleCommand(
     owner, primaryName, secondaryNames = secondaryNames, description, parentPermission, overrideContext
 ) {
     override var showTip: Boolean = true
-
+    override val limitMessage: String? = null
     annotation class Example(val value: String)
 
     override fun getUsages(): List<CommandBasicUsage> {

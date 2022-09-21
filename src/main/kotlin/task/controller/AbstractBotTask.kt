@@ -8,6 +8,7 @@ import org.celery.utils.time.TimeUtils
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.Executors
 
 /**
  * 在指定时刻执行
@@ -77,10 +78,11 @@ abstract class AbstractBotTask(
     }
 
     override fun run() {
+        val executors = Executors.newCachedThreadPool()
         val date = LocalDateTime.now()
 //        logger.debug("now is ${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(date)} trigger = ${isTrigger(date)}")
         if (isTrigger(date)) try {
-            whenTrigger(date)
+            executors.submit{ whenTrigger(date) }
         } catch (e: Exception) {
             logger.error("在${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(date)}处理定时任务时出错", e)
         }

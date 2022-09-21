@@ -1,20 +1,25 @@
 package org.celery
 
-import com.celery.rika.commands.`fun`.BaiduPicSearchBlackWords
-import com.celery.rika.commands.`fun`.BaiduPicSearchData
-import command.common.baidu_pic_search.BaiduPicSearchCommand
+import command.common.ero.SetuLibManager
+import command.common.funny.baidu_pic_search.BaiduPicSearchBlackWords
+import command.common.funny.baidu_pic_search.BaiduPicSearchCommand
+import command.common.funny.baidu_pic_search.BaiduPicSearchData
 import command.common.funny.speak_something_shit.SpeakSomeShitAdd
 import command.common.game.genshin.GenshinResourceCommand
 import command.common.game.genshin.grass_cutter.GrassCutterStatCommand
+import command.common.group.exit_notify.MemberExitNotify
+import command.common.group.exit_notify.MemberExitNotifyControl
+import command.common.group.funny.TalkWithMe
 import command.common.group.funny.marry_member.MarryMemberCommand
 import command.common.group.funny.marry_member.MarryMemberCommandBeXioaSan
 import command.common.group.funny.marry_member.data.MarryMemberData
 import command.common.group.manage.AdvanceMute
 import command.common.group.manage.KickMember
-import command.common.what_anime.WhatAnime
+import command.common.tool.github.what_anime.WhatAnime
 import config.pixiv.PixivConfigs
 import config.pixiv.config.ConfigData
 import data.Limits
+import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.command.Command
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
@@ -24,11 +29,11 @@ import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.registerTo
 import net.mamoe.mirai.utils.info
 import org.celery.command.builtin.*
-import org.celery.command.common.NetEase
 import org.celery.command.common.TestCommand
-import org.celery.command.common.funny.IKunTimeTransformer
-import org.celery.command.common.funny.MyLuck
-import org.celery.command.common.funny.SearchGeng
+import org.celery.command.common.coins.MyCoins
+import org.celery.command.common.ero.commands.RandomSetu
+import org.celery.command.common.ero.commands.SpecificSetu
+import org.celery.command.common.funny.*
 import org.celery.command.common.funny.emoji_mix.AddMix
 import org.celery.command.common.funny.emoji_mix.DeleteMix
 import org.celery.command.common.funny.emoji_mix.EmojiMix
@@ -37,6 +42,10 @@ import org.celery.command.common.github.Github
 import org.celery.command.common.group.`fun`.banme.Banme
 import org.celery.command.common.group.funny.WorldCloud
 import org.celery.command.common.group.funny.marry_member.MarryMemberCommandDivoce
+import org.celery.command.common.group.join_welcom.MemberJoinWelcom
+import org.celery.command.common.group.join_welcom.MemberJoinWelcomControl
+import org.celery.command.common.group.manage.RequireHeader
+import org.celery.command.common.group.manage.RequireHeaderConfirm
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricity
 import org.celery.command.common.love_generate_electricity.LoveGenerateElectricityAdd
 import org.celery.command.common.nbnhhsh.Nbnhhsh
@@ -54,6 +63,7 @@ import org.celery.data.Coins
 import org.celery.task.CleanCacheTask
 import org.celery.task.CommandDataAutoSave
 import org.celery.task.HappyNewYearTask
+import org.celery.task.NewTask
 import org.celery.utils.selenium.Selenium
 import org.celery.utils.task_controller.BotTaskController
 
@@ -87,7 +97,7 @@ object Rika : KotlinPlugin(
     }
     override fun onEnable() {
         logger.info { "********************************************************" }
-        Limitable.reload()
+//        Limitable.reload()
         //internal
         MessageSaver.registerTo(GlobalEventChannel)
         CommandExecutor.registerTo(GlobalEventChannel)
@@ -100,6 +110,7 @@ object Rika : KotlinPlugin(
         EditConfig.reg()
         AddBlackList.reg()
         CallControl.reg()
+        MyCoins.reg()
         //common commands
         MarryMemberCommand.reg()
         MarryMemberCommandBeXioaSan.reg()
@@ -129,17 +140,32 @@ object Rika : KotlinPlugin(
         PickMoonCake.reg()
         SauceNaoPicSearch.reg()
         WhatAnime.reg()
+        RequireHeader.reg()
+        RequireHeaderConfirm.reg()
+        MemberExitNotifyControl.reg()
+        MemberExitNotify.reg()
+        MemberExitNotifyControl.reg()
+        MemberExitNotify.reg()
+        MemberJoinWelcomControl.reg()
+        MemberJoinWelcom.reg()
+        TalkWithMe.reg()
+        BaiduSearchSBCommand.reg()
+        RandomSetu.reg()
+        SpecificSetu.reg()
         // add task
         BotTaskController.add(CleanCacheTask())
         BotTaskController.add(CommandDataAutoSave())
         BotTaskController.add(HappyNewYearTask())
+        BotTaskController.add(NewTask())
         // start task
         BotTaskController.registerAll()
         //check
         mainCheck()
         allRegisteredCommand.forEach(CCommand::perCheck)
         logger.info { "Rika loaded" }
-
+        launch{
+            SetuLibManager
+        }
         logger.info { "********************************************************" }
     }
 
@@ -158,7 +184,7 @@ object Rika : KotlinPlugin(
 
     override fun onDisable() {
         seleniums.forEach(Selenium::quit)
-        Limitable.save()
+//        Limitable.save()
         super.onDisable()
     }
 }
@@ -168,10 +194,12 @@ private fun CCommand.reg(){
         is Command -> {
             register(true)
             Rika.allRegisteredCommand.add(this)
+            Limitable.allRegistered.add(this)
         }
         is EventCommand<*> ->{
             CommandExecutor.add(this)
             Rika.allRegisteredCommand.add(this)
+            Limitable.allRegistered.add(this)
         }
     }
 }

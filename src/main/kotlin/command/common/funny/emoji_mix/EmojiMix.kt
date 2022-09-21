@@ -24,9 +24,9 @@ object EmojiMix : RegexCommand(
     description = "混合两个emoji表情",
     example = "😂🤣",
 ) {
-    override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.Subject
-    override var defaultCountLimit: Int = 40
-    override var defaultCoolDown: Long = 10
+    init {
+        defaultCallCountLimitMode = BlockRunMode.Subject
+    }
     @Command
     suspend fun MessageEvent.nn(matchResult: EventMatchResult): ExecutionResult {
         val result1 = matchResult.getAllMatches().random()

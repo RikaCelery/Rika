@@ -8,11 +8,12 @@ import xyz.cssxsh.pixiv.AgeLimit
 import xyz.cssxsh.pixiv.SanityLevel
 
 object Limits : AutoSavePluginData("limits") {
-
     override val serializersModule: SerializersModule = SerializersModule {
         contextual(SanityLevel::class, SanityLevel.serializer())
         contextual(AgeLimit::class, AgeLimit.serializer())
     }
+    val pidMap:MutableMap<Long,Long> by value()
+    val pidToGroupMap:MutableMap<Long,MutableList<Long>> by value()
     private val groupSanityLevel: MutableMap<Long, SanityLevel> by value()
     private val userSanityLevel: MutableMap<Long, MutableMap<Long, SanityLevel>> by value()
     private val groupR18: MutableMap<Long, AgeLimit> by value()
@@ -21,6 +22,16 @@ object Limits : AutoSavePluginData("limits") {
     private val setuUseLimit: MutableMap<Long, MutableMap<Long, Int>> by value()
     private val defaultSetuLimit: Int by value(5)
 
+
+    fun addEro(pid:Long,group:Long){
+        pidToGroupMap[pid]?.add(group)?:pidToGroupMap.put(pid, mutableListOf(group))
+    }
+    fun isEro(pid:Long,group:Long):Boolean{
+        return pidToGroupMap[pid]?.contains(group)==true
+    }
+    fun getEro(group:Long): List<Long> {
+        return pidToGroupMap.filter { it.value.contains(group) }.keys.toMutableList().apply { addAll(pidMap.keys) }.toList()
+    }
     fun getCountNow(userId: Long, groupId: Long): Int {
         if (setuUseCount[groupId] == null) {
             setuUseCount[groupId] = mutableMapOf(userId to 0)

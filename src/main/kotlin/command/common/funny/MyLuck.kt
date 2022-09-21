@@ -11,9 +11,11 @@ import org.celery.utils.time.TimeUtils
 import kotlin.random.Random
 
 object MyLuck : RegexCommand("今日运气", "^vdluck".toRegex(), normalUsage = "vdluck") {
-    override var defaultCountLimit: Int = 10
-    override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.PureUser
-    override var defaultCoolDown: Long = 1000
+    init{
+        defaultCountLimit = 8
+        defaultCallCountLimitMode = BlockRunMode.PureUser
+        defaultCoolDown = 2000
+    }
     private val rander = Random
 
     @Command
@@ -80,20 +82,13 @@ object MyLuck : RegexCommand("今日运气", "^vdluck".toRegex(), normalUsage = 
     }
 
     @Command(repeat = 7)
-    suspend fun MessageEvent.handle7() {
-        sendMessage(buildString {
-            append("别来烦我了！！！操你吗")
-        })
-    }
-
-    @Command(repeat = 8)
     suspend fun MessageEvent.handle8() {
         sendMessage(buildString {
             append("不准你再vdluck了，老子要睡觉了")
         })
     }
 
-    @Command(repeat = 9)
+    @Command(repeat = 8)
     suspend fun MessageEvent.handle9() {
         val random = Random(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
         sendMessage(buildString {

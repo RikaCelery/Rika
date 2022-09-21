@@ -22,10 +22,9 @@ import net.mamoe.mirai.utils.cast
 import org.celery.command.controller.Call
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
+import org.celery.utils.contact.GroupTools
 import org.celery.utils.getAvatar
-import org.celery.utils.group.GroupTools
 import org.celery.utils.http.HttpUtils.downloader
-import org.celery.utils.number.probability
 import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeConsts
 import java.time.LocalDateTime
@@ -41,10 +40,6 @@ object MarryMemberCommand : RegexCommand(
 
         val (index, match) = eventMatchResult.getIndexedResult()
         val target = GroupTools.getUserOrNull(group, match.groupValues[1].trim())?.cast<Member>()
-        if (target!=null&&setCoolDown(TimeConsts.HOUR)){
-            sendMessage("爬，不许娶了")
-            return ExecutionResult.LimitCall
-        }
         //自己娶了别人或者被娶了，当小三不处理
         if (MarryMemberData[group.id, sender.id] != null) {
             // 被娶了
@@ -132,13 +127,10 @@ object MarryMemberCommand : RegexCommand(
                 return ExecutionResult.Success
             }
         }
-        //一半的几率成功
-        if (target!=null&&probability(0.5)) {
-            sendMessage("坏了,你被无情的拒绝了😭")
-            return ExecutionResult.LimitCall
-        }
-        if (probability(0.2)) {
-            sendMessage("淦，没娶上，你再试试？")
+
+        //只在娶成功后设置冷却
+        if (target!=null&&setCoolDown(TimeConsts.MIN*20)){
+            sendMessage("爬，不许娶了")
             return ExecutionResult.LimitCall
         }
         // 没有指定娶人
@@ -186,11 +178,6 @@ object MarryMemberCommand : RegexCommand(
             +PlainText("今天你的群老婆是")
             +target.getAvatar(subject)
             +PlainText("[${target.nameCardOrNick}][${target.id}]哒")
-            //不可能发生
-//            val xiaoSan = target.getXiaoSan()
-//            if (xiaoSan != null && xiaoSan.isNotEmpty()) {
-//                +(PlainText("\n哦顺便说一下，还有${xiaoSan.size}个人在当你的小三哦~"))
-//            }
         }
         group.sendMessage(message)
 

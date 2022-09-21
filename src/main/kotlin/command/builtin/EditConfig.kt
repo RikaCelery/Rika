@@ -13,7 +13,7 @@ import org.celery.utils.toImage
 import org.openqa.selenium.Dimension
 
 object EditConfig:RegexCommand(
-    "修改配置","^修改\\s(.+)\\s(.+)".toRegex()
+    "修改配置", "^修改\\s(.+)\\s(.+)".toRegex()
 ) {
     @Command(ExecutePermission.SuperUser)
     suspend fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult.Ignored {

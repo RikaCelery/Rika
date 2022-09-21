@@ -10,7 +10,9 @@ object GrassCutterStatCommand:RegexCommand(
     "^/私服".toRegex(),
     normalUsage = "/私服",
 ) {
-    override var defaultCountLimit: Int = 100
+    init {
+        defaultCountLimit = 100
+    }
     @Command
     suspend fun MessageEvent.handle(): events.ExecutionResult.Success {
         val stat = defaultJson.decodeFromString(

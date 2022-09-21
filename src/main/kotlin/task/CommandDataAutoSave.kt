@@ -1,6 +1,5 @@
 package org.celery.task
 
-import org.celery.command.controller.Limitable
 import org.celery.utils.task_controller.AbstractBotTask
 import java.time.LocalDateTime
 
@@ -11,7 +10,7 @@ class CommandDataAutoSave : AbstractBotTask() {
         get() = LocalDateTime.now()
 
     override fun run() {
-        Limitable.save()
+//        Limitable.save()
     }
 
     override fun whenTrigger(date: LocalDateTime) {

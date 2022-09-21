@@ -18,7 +18,7 @@ import net.mamoe.mirai.utils.cast
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.getAvatar
-import org.celery.utils.group.GroupTools
+import org.celery.utils.contact.GroupTools
 import org.celery.utils.number.probability
 import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeConsts

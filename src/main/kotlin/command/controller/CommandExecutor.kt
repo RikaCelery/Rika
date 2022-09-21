@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.event.*
 import net.mamoe.mirai.event.events.GroupEvent
+import net.mamoe.mirai.event.events.GroupMemberEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.SingleMessage
 import net.mamoe.mirai.message.data.findIsInstance
@@ -237,6 +238,43 @@ object CommandExecutor : SimpleListenerHost() {
                         logger.debug("executing...")
                         runBlocking {
                             cmd.reactor(matches, this@listen, call)
+                        }
+                    }.broadcast()
+                }
+                logger.debug("broadcast success")
+                if (cmd.blockSub)
+                    break
+            }
+        }
+    }
+
+    /**
+     * 从消息/事件中识别指令
+     *
+     * 原事件会被包装到CommandExecutionEvent中
+     */
+    @EventHandler
+    suspend fun GroupMemberEvent.listen2() {
+        if (this is MessageEvent)
+            return
+        for (cmd in commands.sortedByDescending { it.priority }) {
+//            println(cmd.commandId)
+            val matches = cmd.matches(this@listen2)
+            if (matches != null) {
+                logger.debug("find match: ${cmd.commandId}")
+                val call = Call(cmd.commandId, member.id, group.id)
+                if (!cmd.canCall(call))
+                    continue
+                launch {
+                    EventCommandExecutionEvent(
+                        eventCommand = cmd,
+                        fromEvent = this@listen2,
+                        matches = matches,
+                        call = call
+                    ) {
+                        logger.debug("executing...")
+                        runBlocking {
+                            cmd.reactor(matches, this@listen2, call)
                         }
                     }.broadcast()
                 }

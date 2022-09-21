@@ -66,7 +66,7 @@ object PixivSql : CoroutineScope {
         logger.info("initing database")
         var databaseTmp: Database? = null
         var n = 0
-        if (ConfigData.config.useSql)
+        if (ConfigData.config.useSql) {
             while (databaseTmp == null) {
                 n++
                 try {
@@ -86,9 +86,11 @@ object PixivSql : CoroutineScope {
                     break
                 }
             }
-        if (databaseTmp == null) {
-            logger.info("数据库连接失败,已关闭数据库功能")
-        }
+            if (databaseTmp == null) {
+                logger.warning("数据库连接失败,已关闭数据库功能")
+            }
+        }else
+            logger.warning("已关闭数据库功能")
         database = databaseTmp
     }
 }

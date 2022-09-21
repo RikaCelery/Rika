@@ -10,7 +10,7 @@ import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.Limitable
 import org.celery.command.controller.RegexCommand
-import org.celery.utils.group.GroupTools
+import org.celery.utils.contact.GroupTools
 import org.celery.utils.permission.isSuperUser
 
 object CallControl:RegexCommand(

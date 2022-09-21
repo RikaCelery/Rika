@@ -17,7 +17,6 @@ object Banme : RegexCommand(
     description = "娱乐禁言",
 ) {
     private val rander = kotlin.random.Random
-    override var defaultCoolDown: Long = 1000
 
     @Command
     suspend fun GroupMessageEvent.on(): ExecutionResult {

@@ -265,6 +265,7 @@ object HttpUtils {
     fun getResponse(url: String): Response {
         val request = Request.Builder()
             .url(url)
+            .addHeader("Referer", "")
             .addHeader("Accept", "text/plain, */*; q=0.01")
             .addHeader("Accept-Encoding", "gzip, deflate, br")
             .addHeader(

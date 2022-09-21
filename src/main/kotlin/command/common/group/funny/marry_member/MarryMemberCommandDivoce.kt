@@ -26,13 +26,16 @@ object MarryMemberCommandDivoce : RegexCommand(
         if (newMap[group.id] == null) {
             newMap[group.id] = mutableListOf()
         }
-
-        if (setCoolDown(TimeConsts.HOUR)) {
-            sendMessage("爬，不许离婚")
+        if (isCoolDown) {
+            sendMessage("你小子还没完了？爬，不许离婚")
             return ExecutionResult.LimitCall
         }
 //        if (newMap[group.id]?.any { it.wife == member.id } == true && newMap[group.id]?.any { it.husband == sender.id } == false) {
         if (probability(0.9)) {
+            if (setCoolDown(TimeConsts.MIN*5)) {
+                return ExecutionResult.LimitCall
+            }
+            sendMessage("打是情，骂是爱，,不打不亲不相爱。答应我不要分手。")
             return ExecutionResult.LimitCall
         }
         when {

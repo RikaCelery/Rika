@@ -2,11 +2,12 @@ package org.celery.command.controller
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
+import kotlinx.serialization.modules.serializersModuleOf
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.console.util.ContactUtils.getContact
@@ -17,6 +18,12 @@ import net.mamoe.mirai.utils.debug
 import org.celery.Rika
 import org.celery.command.controller.BlockRunMode.*
 import org.celery.command.controller.CommandBlockMode.*
+import org.celery.config.AutoReloadMap
+import org.celery.config.AutoReloadable
+import org.celery.config.main.CallConfig
+import org.celery.config.main.Keys
+import org.celery.config.main.PublicConfig
+import org.celery.exceptions.CommandAbortException
 import java.io.File
 import java.util.*
 
@@ -25,31 +32,148 @@ import java.util.*
  */
 interface Limitable {
     companion object {
-        //调用历史记录
-        var callHistory = Hashtable<String, MutableList<Call>>()
+        val allRegistered = mutableListOf<Limitable>()
 
-        // 暂时关闭的群
-        var tempDisable = Hashtable<String, MutableList<Long>>()
-        private var enableMap = Hashtable<String,Boolean>()
+        //调用历史记录
+//        var callHistory = Hashtable<String, MutableList<Call>>()
+        object CallHistory : AutoReloadable("limit/CallHistory"), MutableList<Call> {
+            override val modules: MutableList<SerializersModule>
+                get() = mutableListOf(serializersModuleOf(Call.serializer()).also { println("add module") })
+
+            private var callHistory = mutableListOf<Call>()
+
+            override fun load() {
+                callHistory = jsonSerializer.decodeFromString(pluginConfigsFile.readText())
+            }
+
+            override fun save() {
+                pluginConfigsFile.writeText(
+                    jsonSerializer.encodeToString(
+                        ListSerializer(Call.serializer()),
+                        callHistory
+                    )
+                )
+            }
+
+            operator fun get(commandId: String): List<Call> {
+                return callHistory.filter { it.commandId == commandId }
+            }
+
+            operator fun get(commandId: String, subjectId: Long?, userId: Long?): List<Call> {
+                return callHistory.filter { it.commandId == commandId && it.subjectId == subjectId && it.userId == userId }
+            }
+
+            operator fun get(call: Call): List<Call> {
+                return callHistory.filter { it.commandId == call.commandId && it.subjectId == call.subjectId && it.userId == call.userId }
+            }
+
+            fun filterSubject(commandId: String, id: Long?): List<Call> {
+                return callHistory.filter { it.commandId == commandId && it.subjectId == id }
+            }
+
+            fun filterSubject(call: Call): List<Call> {
+                return callHistory.filter { it.commandId == call.commandId && it.subjectId == call.subjectId }
+            }
+
+            fun filterPureUser(commandId: String, id: Long?): List<Call> {
+                return callHistory.filter { it.commandId == commandId && it.userId == id }
+            }
+
+            fun filterPureUser(call: Call): List<Call> {
+                return callHistory.filter { it.commandId == call.commandId && it.userId == call.userId }
+            }
+
+            override val size: Int = callHistory.size
+
+            override fun clear() = callHistory.clear()
+
+            override fun addAll(elements: Collection<Call>): Boolean = callHistory.addAll(elements)
+
+            override fun addAll(index: Int, elements: Collection<Call>): Boolean = callHistory.addAll(index, elements)
+
+            override fun add(index: Int, element: Call) = callHistory.add(index, element)
+
+            override fun add(element: Call): Boolean = callHistory.add(element)
+
+            override fun get(index: Int): Call = callHistory.get(index)
+
+            override fun isEmpty(): Boolean = callHistory.isNotEmpty()
+
+            override fun iterator(): MutableIterator<Call> = callHistory.iterator()
+
+            override fun listIterator(): MutableListIterator<Call> = callHistory.listIterator()
+
+            override fun listIterator(index: Int): MutableListIterator<Call> = callHistory.listIterator(index)
+
+            override fun removeAt(index: Int): Call = callHistory.removeAt(index)
+
+            override fun subList(fromIndex: Int, toIndex: Int): MutableList<Call> =
+                callHistory.subList(fromIndex, toIndex)
+
+            override fun set(index: Int, element: Call): Call = callHistory.set(index, element)
+
+            override fun retainAll(elements: Collection<Call>): Boolean = callHistory.retainAll(elements)
+
+            override fun removeAll(elements: Collection<Call>): Boolean = callHistory.retainAll(elements)
+
+            override fun remove(element: Call): Boolean = callHistory.remove(element)
+
+            override fun lastIndexOf(element: Call): Int = callHistory.lastIndexOf(element)
+
+            override fun indexOf(element: Call): Int = callHistory.indexOf(element)
+
+            override fun containsAll(elements: Collection<Call>): Boolean = callHistory.containsAll(elements)
+
+            override fun contains(element: Call): Boolean = callHistory.contains(element)
+        }
+
+        object ConfigEnableMap : AutoReloadMap("limit/EnableMap")
 
         // 权限管理(黑白名单)
-        var blockMode = Hashtable<String, MutableMap<Long, CommandBlockMode>>()
-        var blackListSubject = Hashtable<String, MutableList<Long>>()
-        var blackListSubjectToUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
-        var whiteListSubject = Hashtable<String, MutableList<Long>>()
-        var whiteListUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
+        object ConfigBlockMode : AutoReloadMap("limit/BlockMode")
+        object ConfigBlackListSubject : AutoReloadMap("limit/BlackListSubject")
+        object ConfigBlackListSubjectToUser : AutoReloadMap("limit/BlackListSubjectToUser")
+        object ConfigWhiteListSubject : AutoReloadMap("limit/WhiteListSubject")
+        object ConfigWhiteListSubjectToUser : AutoReloadMap("limit/WhiteListSubjectToUser")
 
         // 调用限制信息
-        var callCountLimitMap = Hashtable<String, Int>()
-        var callCountLimitSubjectMap = Hashtable<String, MutableMap<Long, Int>>()
-        var callCountLimitSubjectToUserMap = Hashtable<String, MutableMap<Long, MutableMap<Long, Int>>>()
+        object ConfigCallCountLimitSubjectMap : AutoReloadMap("limit/CallCountLimitSubjectMap")
+        object ConfigCallCountLimitSubjectToUserMap : AutoReloadMap("limit/CallCountLimitSubjectToUserMap")
+
+        object ConfigLimitConfigKeys {
+            const val blockMode = "blockMode"
+//            const val
+//            const val
+//            const val
+//            const val
+//            const val
+        }
+
+        // 暂时关闭的群
+        var tempDisable_WhiteList = Hashtable<String, MutableList<Long>>()
+        var tempDisable_BlackList = Hashtable<String, MutableList<Long>>()
+
+        object TempDisableWhiteList : AutoReloadMap("limit/TempDisableWhiteList")
+        object TempDisableBlackList : AutoReloadMap("limit/TempDisableBlackList")
+//        private var enableMap = Hashtable<String, Boolean>()
+
+        // 权限管理(黑白名单)
+//        var blockMode = Hashtable<String, MutableMap<Long, CommandBlockMode>>()
+//        var blackListSubject = Hashtable<String, MutableList<Long>>()
+//        var blackListSubjectToUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
+//        var whiteListSubject = Hashtable<String, MutableList<Long>>()
+//        var whiteListUser = Hashtable<String, MutableMap<Long, MutableList<Long>>>()
+
+        // 调用限制信息
+//        var callCountLimitMap = Hashtable<String, Int>()
+//        var callCountLimitSubjectMap = Hashtable<String, MutableMap<Long, Int>>()
+//        var callCountLimitSubjectToUserMap = Hashtable<String, MutableMap<Long, MutableMap<Long, Int>>>()
 
         // 调用限制
         var blockRunMode = Hashtable<String, BlockRunMode>()
         var blockUser = Hashtable<String, MutableList<Long?>>()
         var blockSubject = Hashtable<String, MutableList<Long?>>()
         var blockGlobal = Hashtable<String, Boolean>()
-
 
 
         // json序列化器
@@ -87,81 +211,81 @@ interface Limitable {
         private val enableMapFile = Rika.configFolder.resolve("limitation/enableMap.json")
             .apply { if (parentFile.exists().not()) parentFile.mkdirs(); if (exists().not()) createNewFile() }
 
-        /**
-         * 用于从文件中加载共用数据
-         */
-        private fun load() {
-            callHistory = jsonSerializer.decodeFromString<Map<String, MutableList<Call>>>(callHistoryFile.readText0())
-                .toHashTable()
-            tempDisable =
-                (jsonSerializer.decodeFromString<MutableMap<String, MutableList<Long>>>(tempDisableFile.readText0())).toHashTable()
-
-            callCountLimitMap =
-                jsonSerializer.decodeFromString<Map<String, Int>>(callCountLimitMapFile.readText0()).toHashTable()
-            callCountLimitSubjectMap =
-                jsonSerializer.decodeFromString<Map<String, Map<Long, Int>>>(callCountLimitSubjectMapFile.readText0())
-                    .mapValues { it.value.toHashTable() }.toHashTable()
-            callCountLimitSubjectToUserMap =
-                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableMap<Long, Int>>>>(
-                    callCountLimitSubjectToUserMapFile.readText0()
-                ).toHashTable()
-
-            blockMode =
-                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, CommandBlockMode>>>(blockModeFile.readText0())
-                    .toHashTable()
-            blackListSubject =
-                jsonSerializer.decodeFromString<Map<String, MutableList<Long>>>(blackListSubjectFile.readText0())
-                    .toHashTable()
-            blackListSubjectToUser =
-                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(blackListUserFile.readText0())
-                    .toHashTable()
-            whiteListSubject =
-                jsonSerializer.decodeFromString<Map<String, MutableList<Long>>>(whiteListSubjectFile.readText0())
-                    .toHashTable()
-            whiteListUser =
-                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(whiteListUserFile.readText0())
-                    .toHashTable()
-
-            blockRunMode =
-                jsonSerializer.decodeFromString<Map<String, BlockRunMode>>(blockRunModeFile.readText0()).toHashTable()
-            enableMap = jsonSerializer.decodeFromString<Map<String, Boolean>>(enableMapFile.readText0()).toHashTable()
-        }
-
-        /**
-         * 用于将共用数据保存至文件
-         */
-        fun save() {
-            callHistoryFile.writeText(jsonSerializer.encodeToString(callHistory.toMap()))
-            tempDisableFile.writeText(jsonSerializer.encodeToString(tempDisable.toMap()))
-
-            callCountLimitMapFile.writeText(jsonSerializer.encodeToString(callCountLimitMap.toMap()))
-            callCountLimitSubjectMapFile.writeText(jsonSerializer.encodeToString(callCountLimitSubjectMap.toMap()))
-            callCountLimitSubjectToUserMapFile.writeText(jsonSerializer.encodeToString(callCountLimitSubjectToUserMap.toMap()))
-
-            blockModeFile.writeText(jsonSerializer.encodeToString(blockMode.toMap()))
-            blackListSubjectFile.writeText(jsonSerializer.encodeToString(blackListSubject.toMap()))
-            blackListUserFile.writeText(jsonSerializer.encodeToString(blackListSubjectToUser.toMap()))
-            whiteListSubjectFile.writeText(jsonSerializer.encodeToString(whiteListSubject.toMap()))
-            whiteListUserFile.writeText(jsonSerializer.encodeToString(whiteListUser.toMap()))
-
-            blockRunModeFile.writeText(jsonSerializer.encodeToString(blockRunMode.toMap()))
-//            blockUserFile.writeText(jsonSerializer.encodeToString(blockUser.toMap()))
-//            blockSubjectFile.writeText(jsonSerializer.encodeToString(blockSubject.toMap()))
-//            blockGlobalFile.writeText(jsonSerializer.encodeToString(blockGlobal.toMap()))
-
-
-            enableMapFile.writeText(jsonSerializer.encodeToString<Map<String, Boolean>>(enableMap))
-        }
-
-        fun reload() {
-            try {
-                load()
-            } catch (e:Exception) {
-                e.printStackTrace()
-                Rika.configFolder.resolve("limitation").listFiles()?.forEach(File::deleteRecursively)
-                save()
-            }
-        }
+//        /**
+//         * 用于从文件中加载共用数据
+//         */
+//        private fun load() {
+//            callHistory = jsonSerializer.decodeFromString<Map<String, MutableList<Call>>>(callHistoryFile.readText0())
+//                .toHashTable()
+//            tempDisable =
+//                (jsonSerializer.decodeFromString<MutableMap<String, MutableList<Long>>>(tempDisableFile.readText0())).toHashTable()
+//
+//            callCountLimitMap =
+//                jsonSerializer.decodeFromString<Map<String, Int>>(callCountLimitMapFile.readText0()).toHashTable()
+//            callCountLimitSubjectMap =
+//                jsonSerializer.decodeFromString<Map<String, Map<Long, Int>>>(callCountLimitSubjectMapFile.readText0())
+//                    .mapValues { it.value.toHashTable() }.toHashTable()
+//            callCountLimitSubjectToUserMap =
+//                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableMap<Long, Int>>>>(
+//                    callCountLimitSubjectToUserMapFile.readText0()
+//                ).toHashTable()
+//
+//            blockMode =
+//                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, CommandBlockMode>>>(blockModeFile.readText0())
+//                    .toHashTable()
+//            blackListSubject =
+//                jsonSerializer.decodeFromString<Map<String, MutableList<Long>>>(blackListSubjectFile.readText0())
+//                    .toHashTable()
+//            blackListSubjectToUser =
+//                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(blackListUserFile.readText0())
+//                    .toHashTable()
+//            whiteListSubject =
+//                jsonSerializer.decodeFromString<Map<String, MutableList<Long>>>(whiteListSubjectFile.readText0())
+//                    .toHashTable()
+//            whiteListUser =
+//                jsonSerializer.decodeFromString<Map<String, MutableMap<Long, MutableList<Long>>>>(whiteListUserFile.readText0())
+//                    .toHashTable()
+//
+//            blockRunMode =
+//                jsonSerializer.decodeFromString<Map<String, BlockRunMode>>(blockRunModeFile.readText0()).toHashTable()
+//            enableMap = jsonSerializer.decodeFromString<Map<String, Boolean>>(enableMapFile.readText0()).toHashTable()
+//        }
+//
+//        /**
+//         * 用于将共用数据保存至文件
+//         */
+//        fun save() {
+//            callHistoryFile.writeText(jsonSerializer.encodeToString(callHistory.toMap()))
+//            tempDisableFile.writeText(jsonSerializer.encodeToString(tempDisable.toMap()))
+//
+//            callCountLimitMapFile.writeText(jsonSerializer.encodeToString(callCountLimitMap.toMap()))
+//            callCountLimitSubjectMapFile.writeText(jsonSerializer.encodeToString(callCountLimitSubjectMap.toMap()))
+//            callCountLimitSubjectToUserMapFile.writeText(jsonSerializer.encodeToString(callCountLimitSubjectToUserMap.toMap()))
+//
+//            blockModeFile.writeText(jsonSerializer.encodeToString(blockMode.toMap()))
+//            blackListSubjectFile.writeText(jsonSerializer.encodeToString(blackListSubject.toMap()))
+//            blackListUserFile.writeText(jsonSerializer.encodeToString(blackListSubjectToUser.toMap()))
+//            whiteListSubjectFile.writeText(jsonSerializer.encodeToString(whiteListSubject.toMap()))
+//            whiteListUserFile.writeText(jsonSerializer.encodeToString(whiteListUser.toMap()))
+//
+//            blockRunModeFile.writeText(jsonSerializer.encodeToString(blockRunMode.toMap()))
+////            blockUserFile.writeText(jsonSerializer.encodeToString(blockUser.toMap()))
+////            blockSubjectFile.writeText(jsonSerializer.encodeToString(blockSubject.toMap()))
+////            blockGlobalFile.writeText(jsonSerializer.encodeToString(blockGlobal.toMap()))
+//
+//
+//            enableMapFile.writeText(jsonSerializer.encodeToString<Map<String, Boolean>>(enableMap))
+//        }
+//
+//        fun reload() {
+//            try {
+//                load()
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Rika.configFolder.resolve("limitation").listFiles()?.forEach(File::deleteRecursively)
+//                save()
+//            }
+//        }
 
         /**
          * Map to HashTable
@@ -176,14 +300,55 @@ interface Limitable {
     }
 
     fun disableFor(subject: Long): Boolean {
-        if (tempDisable[commandId]?.contains(subject) == true)
-            return false
-        tempDisable[commandId]?.add(subject) ?: tempDisable.put(commandId, mutableListOf(subject))
-        return true
+        when (getSubjectBlockMode(subject)) {
+            BLACKLIST -> {
+                if (TempDisableWhiteList[commandId, mutableListOf<Long>()].contains(subject)) return false
+                val list = TempDisableWhiteList[commandId, mutableListOf<Long>()]
+                list.add(subject)
+                TempDisableWhiteList[commandId] = list
+                return true
+            }
+            WHITELIST -> {
+                if (!TempDisableWhiteList[commandId, mutableListOf<Long>()].contains(subject)) return false
+                val list = TempDisableWhiteList[commandId, mutableListOf<Long>()]
+                list.remove(subject)
+                TempDisableWhiteList[commandId] = list
+                return true
+            }
+            EMPTY -> {
+                val map = ConfigBlockMode[commandId, mutableMapOf<Long, CommandBlockMode>()]
+                Rika.logger.debug("blockMode reset to default(${CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]}) for subject.")
+                map[subject] = CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]
+                ConfigBlockMode[commandId] = map
+                throw IllegalStateException("状态错误，已重置")
+            }
+        }
     }
 
     fun enableFor(subject: Long): Boolean {
-        return (tempDisable[commandId]?.remove(subject) ?: false)
+        when (getSubjectBlockMode(subject)) {
+            BLACKLIST -> {
+                if (!TempDisableWhiteList[commandId, mutableListOf<Long>()].contains(subject)) return false
+                val list = TempDisableWhiteList[commandId, mutableListOf<Long>()]
+                list.remove(subject)
+                TempDisableWhiteList[commandId] = list
+                return true
+            }
+            WHITELIST -> {
+                if (TempDisableWhiteList[commandId, mutableListOf<Long>()].contains(subject)) return false
+                val list = TempDisableWhiteList[commandId, mutableListOf<Long>()]
+                list.add(subject)
+                TempDisableWhiteList[commandId] = list
+                return true
+            }
+            EMPTY -> {
+                val map = ConfigBlockMode[commandId, mutableMapOf<Long, CommandBlockMode>()]
+                Rika.logger.debug("blockMode reset to default(${CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]}) for subject.")
+                map[subject] = CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]
+                ConfigBlockMode[commandId] = map
+                throw IllegalStateException("状态错误，已重置")
+            }
+        }
     }
 
     fun getEnable(): Boolean {
@@ -192,11 +357,12 @@ interface Limitable {
 
     fun disable() {
         Rika.logger.debug("$commandId disabled.")
-        enableMap[commandId] = false
+        ConfigEnableMap[commandId] = false
     }
+
     fun enable() {
         Rika.logger.debug("$commandId enabled.")
-        enableMap[commandId] = true
+        ConfigEnableMap[commandId] = true
     }
 
     /**
@@ -208,93 +374,110 @@ interface Limitable {
      * 控制命令的启用或关闭（全局）
      */
     var defaultEnable: Boolean
+        get() = CallConfig["$commandId.enable", true]
+        set(value) {
+            CallConfig["$commandId.enable"] = value
+        }
 
     /**
      * 默认的最多调用次数,在[callCountLimitMap]中不存在对应值时取这个
      */
     var defaultCountLimit: Int
+        get() = CallConfig["$commandId.max_count", PublicConfig[Keys.MAX_COUNT_DEFAULT, 3000]]
+        set(value) {
+            CallConfig["$commandId.max_count"] = value
+        }
 
     /**
-     * 阻塞调用方式,固定不可变
+     * 阻塞调用方式
      */
     var defaultCallCountLimitMode: BlockRunMode
+        get() = CallConfig["$commandId.block_run_mode", BlockRunMode.User]
+        set(value) {
+            CallConfig["$commandId.block_run_mode"] = value
+        }
 
     /**
      * 阻塞调用方式,固定不可变
      */
     var defaultBlockRunModeMode: BlockRunMode
+        get() = CallConfig["$commandId.block_run_mode", BlockRunMode.Subject]
+        set(value) {
+            CallConfig["$commandId.block_run_mode"] = value
+        }
+
     /**
      * 默认的冷却时长,在[]中不存在对应值时取这个 毫秒
      */
     var defaultCoolDown: Long
+        get() = CallConfig["$commandId.cool_down", PublicConfig[Keys.COOL_DOWN_DEFAULT, 3000]]
+        set(value) {
+            CallConfig["$commandId.cool_down"] = value
+        }
 
     var showTip: Boolean
+        get() = CallConfig["$commandId.show_tip", PublicConfig[Keys.SHOW_TIP, false]]
+        set(value) {
+            CallConfig["$commandId.show_tip"] = value
+        }
 
 
     fun getBlockRunMode(commandId: String) = blockRunMode[commandId] ?: this.defaultBlockRunModeMode
     fun getCoolDown(commandId: String) = defaultCoolDown
-    fun getCallSize(call: Call) = getCallSizeOrNull(call)?:0
-    fun getCountLimit(commandId: String) = callCountLimitMap[commandId]
+    fun getCallSize(call: Call) = getCallSizeOrNull(call) ?: 0
     fun getCountLimit(call: Call): Int = getCountLimit(call.commandId, call.subjectId, call.userId)
     fun getCountLimit(id: String, groupId: Long?, userId: Long?): Int {
-
-        val userLimit = callCountLimitSubjectToUserMap[id]?.get(groupId)?.get(userId)
-        if (userLimit != null)
-            return userLimit
-        val groupLimit = callCountLimitSubjectMap[id]?.get(groupId)
-        if (groupLimit != null)
-            return groupLimit
-        val globalLimit = callCountLimitMap[id]
-        if (globalLimit != null)
-            return globalLimit
-        return defaultCountLimit
+        val limitable = allRegistered.singleOrNull { it.commandId == id }
+        if (limitable == null) {
+            println(id)
+            return -2
+        }
+        val userLimit =
+            ConfigCallCountLimitSubjectToUserMap[id, mutableMapOf<Long, MutableMap<Long, Int>>()][groupId]?.get(userId)
+        if (userLimit != null) return userLimit
+        val groupLimit = ConfigCallCountLimitSubjectMap[id, mutableMapOf<Long, Int>()][groupId]
+        if (groupLimit != null) return groupLimit
+        return limitable.defaultCountLimit
     }
 
-    fun getCallSizeOrNull(call: Call,mode: BlockRunMode): Int? {
+    fun getCallSizeOrNull(call: Call, mode: BlockRunMode): Int? {
         val size = when (mode) {
-            Global -> callHistory[call.commandId]?.size
-            Subject -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId }?.size
-            User -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId && it.userId == call.userId }?.size
-            PureUser -> callHistory[call.commandId]?.filter { it.userId == call.userId }?.size
+            Global -> CallHistory[call.commandId].size
+            Subject -> CallHistory.filterSubject(call).size
+            User -> CallHistory[call].size
+            PureUser -> CallHistory.filterPureUser(call).size
         }
         return size
     }
 
     fun setUserCountLimit(subject: Long, userId: Long, limit: Int) {
-        if (callCountLimitSubjectToUserMap[commandId] == null)
-            callCountLimitSubjectToUserMap[commandId] = mutableMapOf()
-        if (callCountLimitSubjectToUserMap[commandId]!![subject] == null)
-            callCountLimitSubjectToUserMap[commandId]!![subject] = mutableMapOf()
-        callCountLimitSubjectToUserMap[commandId]!![subject]!![userId] = limit
+        val map = ConfigCallCountLimitSubjectToUserMap[commandId, mutableMapOf<Long, MutableMap<Long, Int>>()]
+        if (map[subject] == null) map[subject] = mutableMapOf()
+        map[subject]!![userId] = limit
+        ConfigCallCountLimitSubjectToUserMap[commandId] = map
     }
 
     fun getUserCountLimit(subject: Long, userId: Long): Int? {
-        if (callCountLimitSubjectToUserMap[commandId] == null)
-            callCountLimitSubjectToUserMap[commandId] = mutableMapOf()
-        if (callCountLimitSubjectToUserMap[commandId]!![subject] == null)
-            callCountLimitSubjectToUserMap[commandId]!![subject] = mutableMapOf()
-        return callCountLimitSubjectToUserMap[commandId]!![subject]!![userId]
+        return ConfigCallCountLimitSubjectToUserMap[commandId, mutableMapOf<Long, MutableMap<Long, Int>>()][subject]?.get(
+            userId
+        )
     }
 
     fun setGroupCountLimit(subject: Long, limit: Int) {
-        if (callCountLimitSubjectMap[commandId] == null)
-            callCountLimitSubjectMap[commandId] = mutableMapOf()
-        callCountLimitSubjectMap[commandId]!![subject] = limit
+        val map = ConfigCallCountLimitSubjectMap[commandId, mutableMapOf<Long, Int>()]
+        map[subject] = limit
+        ConfigCallCountLimitSubjectMap[commandId] = map
     }
 
     fun getGroupCountLimit(subject: Long): Int? {
-        if (callCountLimitSubjectMap[commandId] == null)
-            callCountLimitSubjectMap[commandId] = mutableMapOf()
-        return callCountLimitSubjectMap[commandId]!![subject]
+        return ConfigCallCountLimitSubjectMap[commandId, mutableMapOf<Long, Int>()][subject]
     }
 
     fun setGlobalLimit(limit: Int) {
-        callCountLimitMap[commandId] = limit
+        defaultCountLimit = limit
     }
 
-    fun getGlobalLimit(): Int? {
-        return callCountLimitMap[commandId]
-    }
+    fun getGlobalLimit(): Int? = defaultCountLimit
 
     fun addBlackUserGlobal(userId: Long): Boolean {
         return addBlackUserInGroup(0, userId)
@@ -305,46 +488,37 @@ interface Limitable {
     }
 
     fun addBlackUserInGroup(groupId: Long, userId: Long): Boolean {
-        if (blackListSubjectToUser[commandId] == null) {
-            blackListSubjectToUser[commandId] = mutableMapOf()
-        }
-        if (blackListSubjectToUser[commandId]!![groupId] == null) {
-            blackListSubjectToUser[commandId]!![groupId] = mutableListOf()
-        }
-        return if (userId in blackListSubjectToUser[commandId]!![groupId]!!)
-            false
+        return if (userId in (ConfigBlackListSubjectToUser[commandId, mutableMapOf<Long, MutableList<Long>>()][groupId]
+                ?: mutableListOf())
+        ) false
         else {
-            blackListSubjectToUser[commandId]!![groupId]!!.add(userId)
+            ConfigBlackListSubjectToUser[commandId] =
+                ConfigBlackListSubjectToUser[commandId, mutableMapOf<Long, MutableList<Long>>()][groupId]!!.add(userId)
             true
         }
     }
 
     fun removeBlackUserInGroup(groupId: Long, userId: Long): Boolean {
-        if (blackListSubjectToUser[commandId] == null) {
-            blackListSubjectToUser[commandId] = mutableMapOf()
-        }
-        if (blackListSubjectToUser[commandId]!![groupId] == null) {
-            blackListSubjectToUser[commandId]!![groupId] = mutableListOf()
-        }
-        return if (userId !in blackListSubjectToUser[commandId]!![groupId]!!)
-            false
+        return if (userId !in (ConfigBlackListSubjectToUser[commandId, mutableMapOf<Long, MutableList<Long>>()][groupId]
+                ?: mutableListOf())
+        ) false
         else {
-            blackListSubjectToUser[commandId]!![groupId]!!.remove(userId)
+            ConfigBlackListSubjectToUser[commandId] =
+                ConfigBlackListSubjectToUser[commandId, mutableMapOf<Long, MutableList<Long>>()][groupId]!!.remove(
+                    userId
+                )
             true
         }
     }
 
     fun addCall(call: Call): Boolean {
-        callHistory[call.commandId]?.add(call) ?: kotlin.run {
-            callHistory[call.commandId] = mutableListOf(call)
-        }
+        CallHistory.add(call)
         Rika.logger.debug("$call added.")
         return true
     }
+
     fun removeCall(call: Call): Boolean {
-        callHistory[call.commandId]?.remove(call) ?: kotlin.run {
-            callHistory[call.commandId] = mutableListOf(call)
-        }
+        CallHistory.remove(call)
         Rika.logger.debug("$call removed.")
         return true
     }
@@ -354,23 +528,23 @@ interface Limitable {
         val check2 = checkFrequency(call)
         val check3 = checkCountLimit(call)
         val and = check1.and(check2).and(check3)
-        if (!and)
-            Rika.logger.debug("pre check failed.")
+        if (!and) Rika.logger.debug("pre check failed.")
         return and
     }
 
     fun hasPermission(call: Call): Boolean {
-        if (tempDisable[call.commandId]?.contains(call.subjectId) == true) {
+        if (tempDisable_WhiteList[call.commandId]?.contains(call.subjectId) == true) {
             Rika.logger.debug("permission check failed, command is disabled for subject(${call.subjectId}).")
             return false
         }
-        if (!(enableMap[commandId]?:defaultEnable)) {
+        if (!(ConfigEnableMap.getOrNull<Boolean>(commandId) ?: defaultEnable)) {
             Rika.logger.debug("permission check failed, command disabled.")
             return false
         }
         call.subjectId ?: return true
         call.userId ?: return true
-        val globalMode = when (blockMode[call.commandId]?.get(0)) {
+        val map = ConfigBlockMode[commandId, mutableMapOf<Long, CommandBlockMode>()]
+        val globalMode = when (map[0]) {
             BLACKLIST -> {
                 blackListCheck(call)
             }
@@ -378,10 +552,8 @@ interface Limitable {
                 whiteListCheck(call)
             }
             EMPTY -> {
-                blockMode[call.commandId]?.put(call.subjectId, BLACKLIST) ?: kotlin.run {
-                    blockMode[call.commandId] =
-                        mutableMapOf(call.subjectId to BLACKLIST)
-                }
+                map.put(0, BLACKLIST)
+                ConfigBlockMode[call.commandId] = map
                 Rika.logger.debug("reset blockMode(global) to BLACKLIST.")
                 true
             }
@@ -394,7 +566,7 @@ interface Limitable {
             Rika.logger.debug("global permission check filed.")
             return false
         }
-        val subjectMode = when (blockMode[call.commandId]?.get(call.subjectId)) {
+        val subjectMode = when (map.get(call.subjectId)) {
             BLACKLIST -> {
                 blackListCheck(call)
             }
@@ -402,35 +574,49 @@ interface Limitable {
                 whiteListCheck(call)
             }
             EMPTY -> {
-                blockMode[call.commandId]?.put(call.subjectId, BLACKLIST)
-                    ?: kotlin.run {
-                        blockMode[call.commandId] =
-                            mutableMapOf(call.subjectId to BLACKLIST)
-                    }
+                map.put(call.subjectId, BLACKLIST)
+                ConfigBlockMode[call.commandId] = map
                 Rika.logger.debug("reset block mode to BLACKLIST.")
                 true
             }
             null -> {
-                Rika.logger.debug("blockMode is null,set to BLACKLIST for subject.")
-                if (blockMode[call.commandId] == null)
-                    blockMode[call.commandId] = mutableMapOf()
-                blockMode[call.commandId]!![call.subjectId] = BLACKLIST
-                blackListCheck(call)
+                val default = CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]
+                Rika.logger.debug("blockMode is null,set to default($default) for subject.")
+                map[call.subjectId] = default
+                ConfigBlockMode[call.commandId] = map
+                if (default == BLACKLIST)
+                    blackListCheck(call)
+                else if (default == WHITELIST)
+                    whiteListCheck(call)
+                else
+                    throw IllegalStateException("line 585: neither BLACKLIST or WHITELIST")
             }
         }
-        if (!subjectMode)
-            Rika.logger.debug("subject permission check filed.")
+        if (!subjectMode) Rika.logger.debug("subject permission check filed.")
         return subjectMode
     }
 
-    fun addBlackGroup(id: Long) {
-        blackListSubject[commandId]?.add(id) ?: kotlin.run {
-            blackListSubject[commandId] = mutableListOf(id)
+    fun getGlobalBlockMode(commandId: String = this.commandId) =
+        ConfigBlockMode[commandId, mutableMapOf<Long, CommandBlockMode>()][0]
+
+    fun getSubjectBlockMode(subjectId: Long, commandId: String = this.commandId): CommandBlockMode {
+        val map = ConfigBlockMode[commandId, mutableMapOf<Long, CommandBlockMode>()]
+        if (map[subjectId] == null) {
+
+            Rika.logger.debug("blockMode is null,set to default(${CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]}) for subject.")
+            map[subjectId] = CallConfig[Keys.DEFAULT_BLOCK_MODE, BLACKLIST]
+            ConfigBlockMode[commandId] = map
+
         }
+        return map[subjectId]!!
+    }
+
+    fun addBlackGroup(id: Long) {
+        ConfigBlackListSubject[commandId] = ConfigBlackListSubject[commandId, mutableListOf(id)].add(id)
     }
 
     fun removeBlackGroup(id: Long) {
-        blackListSubject[commandId]?.remove(id)
+        ConfigBlackListSubject[commandId] = ConfigBlackListSubject[commandId, mutableListOf(id)].remove(id)
     }
 
     @OptIn(ConsoleExperimentalApi::class)
@@ -439,11 +625,19 @@ interface Limitable {
 
         val size = getCallSizeOrNull(call)
         size ?: return true
+        if (finalLimit == -1) {
+            return true
+        }
         if (size == finalLimit) {
             Rika.logger.debug("last call, limit: $finalLimit.")
-            if (showTip) runBlocking{
-                Bot.instances.find { call.subjectId?.let { it1 -> it.getContactOrNull(it1, false) } != null }
-                    ?.limitNotice(call, finalLimit)
+            try {
+                if (showTip) runBlocking {
+                    Bot.instances.find { call.subjectId?.let { it1 -> it.getContactOrNull(it1, false) } != null }
+                        ?.limitNotice(call, finalLimit)
+                }
+            } catch (e: CommandAbortException) {
+                Rika.logger.debug("abort.")
+                return false
             }
         }
         if (size > finalLimit) {
@@ -453,33 +647,37 @@ interface Limitable {
         return true
     }
 
+    val limitMessage: String?
+
     @OptIn(ConsoleExperimentalApi::class)
     suspend fun Bot.limitNotice(call: Call, finalLimit: Int) {
-            runBlocking {
-                val name = when (this@Limitable.defaultCallCountLimitMode) {
-                    Global -> "全局"
-                    Subject -> "群"
-                    User -> "你群的你"
-                    PureUser -> "你"
-                }
-                getContact(call.subjectId!!, false).sendMessage(
-                    At(
-                        getGroupOrFail(call.subjectId).getOrFail(call.userId!!)
-                    ) + PlainText("他妈！${name}的${call.commandId}指令的次数已经被你小子用完了($finalLimit)")
-                )
-                delay(1000)
+        runBlocking {
+            val name = when (this@Limitable.defaultCallCountLimitMode) {
+                Global -> "全局"
+                Subject -> "群"
+                User -> "你群的你"
+                PureUser -> "你"
             }
+            if (limitMessage != null) {
+                getContact(call.subjectId!!, false).sendMessage(limitMessage!!)
+            } else getContact(call.subjectId!!, false).sendMessage(
+                At(
+                    getGroupOrFail(call.subjectId).getOrFail(call.userId!!)
+                ) + PlainText("他妈！${name}的${call.commandId}指令的次数已经被你小子用完了($finalLimit)")
+            )
+            delay(1000)
+        }
 
     }
 
     fun getCallSizeOrNull(call: Call): Int? {
         val size = when (defaultCallCountLimitMode) {
-            Global -> callHistory[call.commandId]?.size
-            Subject -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId }?.size
-            User -> callHistory[call.commandId]?.filter { it.subjectId == call.subjectId && it.userId == call.userId }?.size
-            PureUser -> callHistory[call.commandId]?.filter { it.userId == call.userId }?.size
+            Global -> CallHistory[call.commandId].size
+            Subject -> CallHistory.filterSubject(call).size
+            User -> CallHistory[call].size
+            PureUser -> CallHistory.filterPureUser(call).size
         }
-        return size.let { if (it==0) null else it }
+        return size.let { if (it == 0) null else it }
     }
 
     fun checkFrequency(call: Call): Boolean {
@@ -495,10 +693,10 @@ interface Limitable {
 
     private fun getLastCallOrNull(call: Call): Call? {
         val last = when (getBlockRunMode(call.commandId)) {
-            Global -> callHistory[call.commandId]?.lastOrNull()
-            Subject -> callHistory[call.commandId]?.lastOrNull { it.subjectId == call.subjectId }
-            User -> callHistory[call.commandId]?.lastOrNull { it.subjectId == call.subjectId && it.userId == call.userId }
-            PureUser -> callHistory[call.commandId]?.lastOrNull { it.userId == call.userId }
+            Global -> CallHistory[call.commandId].maxByOrNull { it.timeStamp }
+            Subject -> CallHistory.filterSubject(call).maxByOrNull { it.timeStamp }
+            User -> CallHistory[call].maxByOrNull { it.timeStamp }
+            PureUser -> CallHistory.filterPureUser(call).maxByOrNull { it.timeStamp }
         }
         return last
     }
@@ -513,15 +711,15 @@ interface Limitable {
     }
 
     fun whiteListCheck(call: Call): Boolean {
-        if (!whiteListGroupCheck(call) || !whiteListGroupUserCheck(call) || !whiteListGlobalUserCheck(call)) {
-            Rika.logger.debug("whiteListCheck failed.")
-            return false
+        if (whiteListGroupCheck(call) || whiteListGroupUserCheck(call) || whiteListGlobalUserCheck(call)) {
+            return true
         }
-        return true
+        Rika.logger.debug("whiteListCheck failed.")
+        return false
     }
 
     fun blackListGroupCheck(call: Call): Boolean {
-        if (call.subjectId in (blackListSubject[call.commandId] ?: mutableListOf())) {
+        if (call.subjectId in (ConfigBlackListSubject[commandId, mutableListOf<Long>()])) {
             Rika.logger.debug("blackListGroupCheck failed.")
             return false
         }
@@ -529,7 +727,9 @@ interface Limitable {
     }
 
     fun blackListGroupUserCheck(call: Call): Boolean {
-        if (call.userId in (blackListSubjectToUser[call.commandId]?.get(call.subjectId) ?: mutableListOf())) {
+        if (call.userId in (ConfigBlackListSubjectToUser[call.commandId, mutableMapOf<Long, MutableList<Long>>()][call.subjectId]
+                ?: mutableListOf())
+        ) {
             Rika.logger.debug("blackListGroupUserCheck failed.")
             return false
         }
@@ -537,7 +737,9 @@ interface Limitable {
     }
 
     fun blackListGlobalUserCheck(call: Call): Boolean {
-        if (call.userId in (blackListSubjectToUser[call.commandId]?.get(0) ?: mutableListOf())) {
+        if (call.userId in (ConfigBlackListSubjectToUser[call.commandId, mutableMapOf<Long, MutableList<Long>>()][0]
+                ?: mutableListOf())
+        ) {
             Rika.logger.debug("blackListGlobalUserCheck failed.")
             return false
         }
@@ -545,7 +747,7 @@ interface Limitable {
     }
 
     fun whiteListGroupCheck(call: Call): Boolean {
-        if (call.subjectId !in (whiteListSubject[call.commandId] ?: mutableListOf())) {
+        if (call.subjectId !in (ConfigWhiteListSubject[call.commandId, mutableListOf<Long>()])) {
             Rika.logger.debug("whiteListGroupCheck failed.")
             return false
         }
@@ -553,7 +755,9 @@ interface Limitable {
     }
 
     fun whiteListGroupUserCheck(call: Call): Boolean {
-        if (call.userId !in (whiteListUser[call.commandId]?.get(call.subjectId) ?: mutableListOf())) {
+        if (call.userId !in (ConfigWhiteListSubjectToUser[call.commandId, mutableMapOf<Long, MutableList<Long>>()][call.subjectId]
+                ?: mutableListOf())
+        ) {
             Rika.logger.debug("whiteListGroupUserCheck failed.")
             return false
         }
@@ -561,7 +765,9 @@ interface Limitable {
     }
 
     fun whiteListGlobalUserCheck(call: Call): Boolean {
-        if (call.userId !in (whiteListUser[call.commandId]?.get(0) ?: mutableListOf())) {
+        if (call.userId !in (ConfigWhiteListSubjectToUser[call.commandId, mutableMapOf<Long, MutableList<Long>>()][0]
+                ?: mutableListOf())
+        ) {
             Rika.logger.debug("whiteListGlobalUserCheck failed.")
             return false
         }
@@ -570,6 +776,6 @@ interface Limitable {
 }
 
 private fun File.readText0(): String {
-    Rika.logger.debug{"加载配置$name"}
+    Rika.logger.debug { "加载配置$name" }
     return readText()
 }

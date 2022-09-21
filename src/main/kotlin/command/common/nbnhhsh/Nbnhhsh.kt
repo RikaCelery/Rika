@@ -3,14 +3,12 @@ package org.celery.command.common.nbnhhsh
 import events.ExecutionResult
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
-import model.DataClassNbnhhshItem
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.sendTo
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import okhttp3.FormBody
 import okhttp3.Request
 import org.apache.commons.text.StringEscapeUtils
-import org.celery.command.controller.CommandUsage
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.http.HttpUtils
@@ -19,8 +17,7 @@ import org.celery.utils.selenium.SharedSelenium
 object Nbnhhsh : RegexCommand(
     commandId = "能不能好好说话",
     regex = "^[?？]\\s*([a-zA-Z\\s]+)".toRegex(),
-    normalUsage = "?(中英文均可)",
-    params = listOf(CommandUsage.CommandParam("缩写")),
+    normalUsage = "?<缩写>",
     description = "尝试猜测缩写的含义\n  (老了老了,现在上个网是真看不懂这群人在聊什么东西)",
     example = "?nbnhhsh"
 ) {
@@ -51,7 +48,7 @@ object Nbnhhsh : RegexCommand(
                 group.sendMessage("我不知道（〃｀ 3′〃）")
                 return ExecutionResult.Ignored("not found result")
             }
-            SharedSelenium.renderRaw(renderHtml(resultList!!.first, resultList!!.second)).toExternalResource().use {
+            SharedSelenium.renderRaw(renderHtml(resultList!!.first, resultList.second)).toExternalResource().use {
                 group.uploadImage(it)
             }.sendTo(group)
             return ExecutionResult.Success

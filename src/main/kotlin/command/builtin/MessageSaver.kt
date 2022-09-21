@@ -1,6 +1,5 @@
 package org.celery.command.builtin
 
-import kotlinx.serialization.builtins.serializer
 import net.mamoe.mirai.event.EventHandler
 import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.SimpleListenerHost
@@ -9,6 +8,7 @@ import org.celery.Rika
 import org.celery.command.controller.BlockRunMode
 import org.celery.command.controller.CCommand
 import org.celery.command.controller.CommandBasicUsage
+import org.celery.command.controller.getConfig
 import org.celery.utils.sql.MessageEventSql
 import kotlin.coroutines.CoroutineContext
 
@@ -16,7 +16,9 @@ object MessageSaver : SimpleListenerHost(),CCommand {
     override val commandId: String = "消息保存"
     @EventHandler(EventPriority.MONITOR)
     suspend fun GroupMessageEvent.on() {
-        getConfig(Boolean.serializer(),"enable")
+        if(!getConfig("enable", true)){
+            return
+        }
         MessageEventSql.addmessage(this, (System.currentTimeMillis() / 1000).toInt())
     }
 
@@ -25,12 +27,13 @@ object MessageSaver : SimpleListenerHost(),CCommand {
     }
 
     override var showTip: Boolean = false
+    override val limitMessage: String? =null
     override var defaultBlockRunModeMode: BlockRunMode = BlockRunMode.Subject
 
     override fun getUsages(): List<CommandBasicUsage> = listOf()
 
     init {
-        if (getConfig(Boolean.serializer(),"enable",true)){
+        if (getConfig("enable", true)){
             Rika.logger.info("消息保存已开启,若占用空间过大请将pluginConfigs.json中 消息保存.enable值修改为false")
         }
     }

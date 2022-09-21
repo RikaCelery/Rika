@@ -3,7 +3,6 @@ package org.celery.command.common.funny
 import events.ExecutionResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -14,6 +13,7 @@ import net.mamoe.mirai.message.data.buildMessageChain
 import org.celery.command.controller.BlockRunMode
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.getConfig
 import org.celery.utils.http.HttpUtils
 import org.celery.utils.selenium.SharedSelenium
 import org.celery.utils.sendMessage
@@ -29,9 +29,9 @@ object SearchGeng:RegexCommand(
 
 ) {
     private const val gzsAPI = "https://api.iyk0.com/gzs"
-    override var defaultCountLimit: Int = 20
-    override var defaultCoolDown: Long = 2400
-    override var defaultCallCountLimitMode: BlockRunMode = BlockRunMode.PureUser
+    init {
+        defaultCallCountLimitMode = BlockRunMode.PureUser
+    }
     @Command
     suspend fun MessageEvent.handle1(eventMatchResult: EventMatchResult): ExecutionResult {
         val array = getResult(eventMatchResult)
@@ -47,7 +47,7 @@ object SearchGeng:RegexCommand(
     private suspend fun MessageEvent.renderImages(array: JsonArray): MessageChain {
         return buildMessageChain {
             array.forEachIndexed { index, element ->
-                if (index > getConfig(Int.serializer(), "max", 3))
+                if (index > getConfig("max", 3))
                     return@forEachIndexed
                 +SharedSelenium.render(element.jsonObject["title"]!!.jsonPrimitive.content).toImage(subject)
             }

@@ -10,7 +10,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.RegexCommand
 import org.celery.utils.file.FileTools
-import org.celery.utils.group.GroupTools
+import org.celery.utils.contact.GroupTools
 import org.celery.utils.selenium.Selenium
 import org.celery.utils.sendMessage
 import org.openqa.selenium.Dimension

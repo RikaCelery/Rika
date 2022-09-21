@@ -19,6 +19,6 @@ class CleanCacheTask : AbstractBotTask(hours = 0, minutes = 0) {
         logger.debug("clean:MarryMemberData.marriedMap")
         MarryMemberData.newMap.clear()
         logger.debug("clean:Command.callHistory")
-        Limitable.callHistory.clear()
+        Limitable.Companion.CallHistory.clear()
     }
 }

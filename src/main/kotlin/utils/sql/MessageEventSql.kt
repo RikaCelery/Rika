@@ -14,7 +14,7 @@ import org.celery.Rika
 import org.celery.config.main.MainConfig
 import org.celery.config.main.SqlConfig
 import org.celery.utils.file.md5
-import org.celery.utils.group.truncate
+import org.celery.utils.contact.truncate
 import org.celery.utils.http.HttpUtils
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -342,7 +342,7 @@ object MessageEventSql {
             groupMessageEvent.addmessageChain(groupMessageEvent.message, str)
             val delayTime = System.currentTimeMillis() - startTime
             if (showDelay && delayTime > 800)
-                println("记录群消息完成: $id 耗时: ${delayTime}ms")
+                logger.info("记录群消息完成: $id 耗时: ${delayTime}ms")
         }
 //        println("add to GlobalScope ${groupMessageEvent.message.content}")
     }

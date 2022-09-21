@@ -25,7 +25,11 @@ open class CCompositeCommand(
 ) : CCommand, CompositeCommand(
     owner, primaryName, secondaryNames = secondaryNames, description, parentPermission, overrideContext
 ) {
+    override val commandId: String
+        get() = primaryName
     override var showTip: Boolean = true
+    override val limitMessage: String? = null
+
     annotation class Example(val value: String)
     override var defaultBlockRunModeMode: BlockRunMode = BlockRunMode.Subject
 
