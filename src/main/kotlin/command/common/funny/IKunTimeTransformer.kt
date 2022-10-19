@@ -2,7 +2,6 @@ package org.celery.command.common.funny
 
 import events.ExecutionResult
 import net.mamoe.mirai.event.events.MessageEvent
-import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.abs.Command
 import org.celery.utils.sendMessage
@@ -35,7 +34,7 @@ object IKunTimeTransformer:Command(
                 Regex("^\\d+").find(time)!!.value.toInt() * TimeConsts.YEAR
             }
             else -> {
-                Rika.logger.warning("$subject $sender 时长解析失败:$time")
+                logger.warning("$subject $sender 时长解析失败:$time")
                 return ExecutionResult.Ignored("$subject $sender 时长解析失败:$time")
             }
         }

@@ -34,7 +34,7 @@ object AdvanceMute : Command(
             return ExecutionResult.Success
         }
 
-        if (Rika.DEBUG_MODE) Rika.logger.debug("$subject $sender 禁言成员:$member")
+        if (Rika.DEBUG_MODE) logger.debug("$subject $sender 禁言成员:$member")
         //获取禁言对象(可能有多个)
         val targets = if (Regex("(all)|(全体(成员)?)").matches(member.split(' ').first())) null
         else if (message.filterIsInstance<At>().isNotEmpty()) {
@@ -71,11 +71,11 @@ object AdvanceMute : Command(
                 Regex("^\\d+").find(time)!!.value.toInt() * TimeConsts.YEAR
             }
             else -> {
-                Rika.logger.warning("$subject $sender 时长解析失败:$time")
+                logger.warning("$subject $sender 时长解析失败:$time")
                 return ExecutionResult.Ignored("$subject $sender 时长解析失败:$time")
             }
         }
-        Rika.logger.info("禁言目标:$targets 禁言时长:$duration")
+        logger.info("禁言目标:$targets 禁言时长:$duration")
         if (sender.isOperator() || sender.isSuperUser()) {
             if (targets == null) {
                 group.settings.isMuteAll = time != "0"

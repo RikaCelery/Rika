@@ -7,8 +7,8 @@ import net.mamoe.mirai.event.SimpleListenerHost
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.SingleMessage
 import net.mamoe.mirai.message.data.findIsInstance
+import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.safeCast
-import org.celery.Rika
 import org.celery.command.controller.abs.AbstractCommand
 import org.celery.data.Coins
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -22,7 +22,7 @@ event -> findMatch( Command.matches(event)!=null ) -> ExecutionEvent -> execute
  * 指令执行器
  */
 object CommandExecutor : SimpleListenerHost() {
-    private val logger = Rika.logger
+    private val logger = MiraiLogger.Factory.create(this::class)
     private val commands = hashSetOf<EventCommand<*>>()
     private val commands2 = hashSetOf<AbstractCommand>()
     fun add(c: EventCommand<*>) = commands.add(c)

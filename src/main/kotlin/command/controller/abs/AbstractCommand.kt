@@ -9,6 +9,7 @@ import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.broadcast
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.content
+import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.cast
 import net.mamoe.mirai.utils.debug
 import net.mamoe.mirai.utils.safeCast
@@ -51,7 +52,9 @@ abstract class AbstractCommand(
         get() {
             TODO()
         }
-    protected val logger by lazy { Rika.logger }
+    protected val logger by lazy {
+        MiraiLogger.Factory.create(this::class,"Rika-$commandId")
+    }
     val config by lazy {
         object : Reloadable(Rika.configFolderPath.resolve("plugin-configs").resolve(commandId).toString()) {
 
@@ -71,7 +74,7 @@ abstract class AbstractCommand(
         val coin: Int = 0,
         val identity: String = "subCommand",
         val description: String = "",
-        val permissions: Array<RequirePermission> = []
+        val permissions: Array<RequirePermission> = [],
     )
 
     enum class RequirePermission {
@@ -79,7 +82,7 @@ abstract class AbstractCommand(
         /**
          * 好友或群员(非匿名)均可
          */
-        ANY, FRIEND, MEMBER,ONLY_FRIEND,ONLY_MEMBER,
+        ANY, FRIEND, MEMBER, ONLY_FRIEND, ONLY_MEMBER,
 
         /* 限定指令者权限 */
         OPERATOR, OWNER, SUPERUSER
@@ -95,7 +98,7 @@ abstract class AbstractCommand(
             return@let try {
                 if (it.isSuspend) it.callSuspend(this, event)
                 else it.call(this, event)
-            } catch (e:Exception) {
+            } catch (e: Exception) {
                 throw e
             }
         }
@@ -118,8 +121,7 @@ abstract class AbstractCommand(
     fun getOrCreateResource(relative: String): File {
         val file = Rika.dataFolderPath.resolve("resources").resolve(relative).toFile()
         file.createParentFolder()
-        if (file.exists().not())
-            file.createNewFile()
+        if (file.exists().not()) file.createNewFile()
         return file
     }
 
@@ -138,8 +140,7 @@ abstract class AbstractCommand(
     fun getOrCreateDataFile(relative: String, parentName: String = commandId): File {
         val file = Rika.dataFolderPath.resolve("plugin-datas").resolve(parentName).resolve(relative).toFile()
         file.createParentFolder()
-        if (file.exists().not())
-            file.createNewFile()
+        if (file.exists().not()) file.createNewFile()
         return file
     }
 
@@ -158,57 +159,70 @@ abstract class AbstractCommand(
     fun getOrCreateTempFile(relative: String, parentName: String = commandId): File {
         val file = Rika.dataFolderPath.resolve("temp").resolve("temp_" + parentName).resolve(relative).toFile()
         file.createParentFolder()
-        if (file.exists().not())
-            file.createNewFile()
+        if (file.exists().not()) file.createNewFile()
         return file
     }
-}
 
-private fun Event.checkTarget(permission: AbstractCommand.RequirePermission): Boolean {
-    if (permission == ANY) return true
-    val isFriend = this is FriendEvent
-    val isGroup = this is GroupEvent
-    if (permission == ONLY_FRIEND && isGroup) return false
-    if (permission == ONLY_MEMBER && isFriend) return false
-    if (permission == FRIEND && isFriend) return true
-    if (permission == MEMBER && isGroup) return true
-    return false
-}
 
-private fun Event.checkTargetPermission(permission: AbstractCommand.RequirePermission): Boolean {
-    return when (permission) {
-        OPERATOR -> {
-            val b = this.safeCast<GroupMemberEvent>()?.member?.let { it.isOperator() || it.isSuperUser() }.also {
-                if (it == false) Rika.logger.debug(this.cast<GroupMemberEvent>().member.let {
-                    "member:${it.id} is not operator."
-                })
-            } ?: this.safeCast<UserEvent>()?.user?.let { it.isSuperUser() }.also {
-                if (it == false) Rika.logger.debug(this.cast<UserEvent>().user.let {
-                    "user:${it.id} is not super_user."
-                })
-            } ?: false
-            b
-        }
-        OWNER -> {
-            val b = this.safeCast<GroupMemberEvent>()?.member?.let { it.isOwner() || it.isSuperUser() }.also {
-                if (it == false) Rika.logger.debug(this.cast<GroupMemberEvent>().member.let {
-                    "member:${it.id} is not owner."
-                })
-            } ?: this.safeCast<UserEvent>()?.user?.let { it.isSuperUser() }.also {
-                if (it == false) Rika.logger.debug(this.cast<UserEvent>().user.let {
-                    "user:${it.id} is not super_user."
-                })
-            } ?: false
-            b
-        }
-        SUPERUSER -> {
-            this.safeCast<UserEvent>()?.user.isSuperUser()
-        }
-        else -> {
-            throw IllegalStateException()
+    protected fun Event.checkTarget(permission: RequirePermission): Boolean {
+        if (permission == ANY) return true
+        val isFriend = this is FriendEvent
+        val isGroup = this is GroupEvent
+        if (permission == ONLY_FRIEND && isGroup) return false
+        if (permission == ONLY_MEMBER && isFriend) return false
+        if (permission == FRIEND && isFriend) return true
+        if (permission == MEMBER && isGroup) return true
+        return false
+    }
+
+    protected fun Event.checkTargetPermission(permission: AbstractCommand.RequirePermission): Boolean {
+        println("this::class.qualifiedName = ${this::class.qualifiedName}")
+        return when (permission) {
+            OPERATOR -> {
+                val b = this.safeCast<GroupMemberEvent>()?.member?.let { it.isOperator() || it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<GroupMemberEvent>().member.let {
+                        "member:${it.id} is not operator."
+                    })
+                } ?: this.safeCast<GroupMessageEvent>()?.sender?.let { it.isOperator() || it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<GroupMemberEvent>().member.let {
+                        "member:${it.id} is not operator."
+                    })
+                } ?: this.safeCast<UserEvent>()?.user?.let { it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<UserEvent>().user.let {
+                        "user:${it.id} is not super_user."
+                    })
+                } ?: false
+                b
+            }
+            OWNER -> {
+                val b = this.safeCast<GroupMemberEvent>()?.member?.let { it.isOwner() || it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<GroupMemberEvent>().member.let {
+                        "member:${it.id} is not owner."
+                    })
+                } ?: this.safeCast<GroupMessageEvent>()?.sender?.let { it.isOperator() || it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<GroupMemberEvent>().member.let {
+                        "member:${it.id} is not operator."
+                    })
+                } ?: this.safeCast<UserEvent>()?.user?.let { it.isSuperUser() }.also {
+                    if (it == false) logger.debug(this.cast<UserEvent>().user.let {
+                        "user:${it.id} is not super_user."
+                    })
+                } ?: false
+                b
+            }
+            SUPERUSER -> {
+                this.safeCast<UserEvent>()?.user?.isSuperUser()?:
+                this.safeCast<GroupMemberEvent>()?.user?.isSuperUser()?:
+                this.safeCast<MessageEvent>()?.sender.isSuperUser()
+            }
+            else -> {
+                throw IllegalStateException(permission.name)
+            }
         }
     }
+
 }
+
 
 open class Command(
     override val commandId: String,
@@ -248,21 +262,20 @@ open class Command(
             }
 //            println("${commandId} triggers = ${triggers.map { it.name }}")
 //            println("${commandId} trigger = ${trigger?.name}")
-            if (trigger != null)
-                trigger.run {
-                    if (isSuspend) {
-                        callSuspend(this@Command, this@getTriggeredFunctions) as? EventMatchResult
-                    } else {
-                        call(this@Command, this@getTriggeredFunctions) as? EventMatchResult
-                    }
-                } ?.let { matches = it } ?: return@mapNotNull null
+            if (trigger != null) trigger.run {
+                if (isSuspend) {
+                    callSuspend(this@Command, this@getTriggeredFunctions) as? EventMatchResult
+                } else {
+                    call(this@Command, this@getTriggeredFunctions) as? EventMatchResult
+                }
+            }?.let { matches = it } ?: return@mapNotNull null
 
 
 
 
-            matches = matches ?: (annotation.regex.let { listOf(it) }.map { s -> Regex(s,
-                setOf(RegexOption.DOT_MATCHES_ALL,RegexOption.MULTILINE,RegexOption.IGNORE_CASE)) }
-                .firstOrNull { regex -> regex.find(message) != null }?.find(message))?.let { EventMatchResult(it) }
+            matches = matches ?: (annotation.regex.let { listOf(it) }.map { s ->
+                Regex(s, setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
+            }.firstOrNull { regex -> regex.find(message) != null }?.find(message))?.let { EventMatchResult(it) }
             val b1 = matches != null
 
             val receiverParameter = kFunction.extensionReceiverParameter
@@ -285,23 +298,24 @@ open class Command(
         if (event is UserEvent && event.user.isSuperUser()) return true
 
         val message = if (event is MessageEvent) event.message.content else ""
-        val single = event.getTriggeredFunctions(message).ifEmpty { null }?.single()?:return false
+        val single = event.getTriggeredFunctions(message).ifEmpty { null }?.single() ?: return false
 
-        if (event is StrangerEvent&&config["allow_stranger",MainConfig.allowStranger]) {
-            Rika.logger.warning("忽略陌生人消息: $event")
+        if (event is StrangerEvent && config["allow_stranger", MainConfig.allowStranger]) {
+            logger.warning("忽略陌生人消息: $event")
             return false
         }
-        config["allow_friend",MainConfig.allowFriend]
+        config["allow_friend", MainConfig.allowFriend]
         for (permission in single.second.findAnnotation<Command>()!!.permissions) {
-            if (permission.ordinal <= 3) // this should be single
+            if (permission.ordinal <= 4) { // this should be single
                 if (!event.checkTarget(permission)) {
                     //比如不允许私聊之类的
                     logger.warning("checkTarget($permission) failed")
                     return false
-                } else if (!event.checkTargetPermission(permission)) {
-                    logger.warning("checkTargetPermission($permission) failed")
-                    return false
                 }
+            } else if (!event.checkTargetPermission(permission)) {
+                logger.warning("checkTargetPermission($permission) failed")
+                return false
+            }
         }
         logger.debug("checkPermission passed")
         return true
@@ -313,21 +327,19 @@ open class Command(
         val message = if (event is MessageEvent) event.message.content else ""
         for ((matchResult, triggeredFunction, _annotation) in event.getTriggeredFunctions(message)) {
             coin = _annotation.coin
-            if (event is MessageEvent)
-                if (coin > Coins[event.sender]) {
-                    event.sendMessage("他吗 你原石不够了(%d)！！至少要%d个！".format(Coins[event.sender], coin))
-                    return ExecutionResult.LimitCall to coin
-                }
+            if (event is MessageEvent) if (coin > Coins[event.sender]) {
+                event.sendMessage("他吗 你原石不够了(%d)！！至少要%d个！".format(Coins[event.sender], coin))
+                return ExecutionResult.LimitCall to coin
+            }
             val any = try {
                 when (triggeredFunction.parameters.size) {
                     3 -> {
                         val kParameter = triggeredFunction.parameters[2]
-                        if ((kParameter.type.classifier as KClass<*>) == EventMatchResult::class)
-                            if (triggeredFunction.isSuspend) {
-                                triggeredFunction.callSuspend(this, event, matchResult)
-                            } else {
-                                triggeredFunction.call(this, event, matchResult)
-                            }
+                        if ((kParameter.type.classifier as KClass<*>) == EventMatchResult::class) if (triggeredFunction.isSuspend) {
+                            triggeredFunction.callSuspend(this, event, matchResult)
+                        } else {
+                            triggeredFunction.call(this, event, matchResult)
+                        }
                         else throw IllegalArgumentException()
                     }
                     2 -> {
@@ -348,7 +360,7 @@ open class Command(
                 }
             } catch (e: InvocationTargetException) {
                 ExecutionResult.Failed(e.cause)
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 ExecutionResult.Error(e)
             }
             return (any?.safeCast<ExecutionResult>() ?: ExecutionResult.Unknown) to coin
@@ -360,15 +372,13 @@ open class Command(
 }
 
 
-object TestCommand : Command(
-    commandId = "name",
+object TestCommand : Command(commandId = "name",
     priority = 5,
     classify = "class1",
     description = "none",
     usage = "none",
     superUserUsage = "none",
-    example = "ss,fff,hhhc,cv"
-) {
+    example = "ss,fff,hhhc,cv") {
     val listOf: List<String>
         get() = listOf("砂糖", "辣辣", "番茄", "派蒙")
     val timer = Timer()

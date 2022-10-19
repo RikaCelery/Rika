@@ -64,6 +64,8 @@ object SpeakSomeShit : Command(
             return ExecutionResult.Success
         }
         val want = eventMatchResult[2].let { if (it.lastOrNull() == '的') it.dropLast(1) else it }
+        if (want.isNotEmpty())
+        logger.debug { "want:$want" }
         val rawText = if (want.isNotBlank()) list.filter { it.contains(want) }.shuffled().take(count).ifEmpty { null }
             ?: kotlin.run {
                 logger.debug { "want:$want, but not found, return random text" }

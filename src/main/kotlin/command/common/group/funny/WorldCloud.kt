@@ -7,7 +7,6 @@ import net.mamoe.mirai.message.data.MessageChain.Companion.deserializeJsonToMess
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.buildMessageChain
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
-import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.abs.Command
 import org.celery.utils.commandline.runCommandReadText
@@ -91,7 +90,7 @@ object WorldCloud : Command(
                     tmp.appendText(it.content + "\n")
                 }
             } catch (e: Exception) {
-                Rika.logger.warning(e)
+                logger.warning(e)
             }
         }
 
