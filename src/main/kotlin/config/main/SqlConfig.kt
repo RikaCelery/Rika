@@ -1,10 +1,10 @@
 package org.celery.config.main
 
-import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.ValueDescription
 import net.mamoe.mirai.console.data.value
+import org.celery.config.AutoSavePluginConfigAutoReloadAble
 
-object SqlConfig : AutoSavePluginConfig("sqlConfig") {
+object SqlConfig : AutoSavePluginConfigAutoReloadAble("sqlConfig") {
     @ValueDescription("Hitomi数据库")
     val hitomiName: String by value("name_init")
     val hitomiPass: String by value("pass_init")

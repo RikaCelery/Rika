@@ -1,4 +1,4 @@
-package command.common.tool.github.what_anime
+package command.common.tool.what_anime
 
 
 import kotlinx.serialization.SerialName
@@ -33,7 +33,8 @@ data class TraceMoeResponse(
         @SerialName("image")
         var image: String = "", // https://media.trace.moe/image/99939/Nekopara%20-%20OVA%20(BD%201280x720%20x264%20AAC).mp4.jpg?t=98.335&now=1653892514&token=xxxxxxxxxxxxxx
         @SerialName("similarity")
-        var similarity: Double = 0.0, // 0.9440424588727485
+        var similarity: Double = 0.0
+        , // 0.9440424588727485
         @SerialName("to")
         var to: Double = 0.0, // 98.92
         @SerialName("video")
@@ -41,8 +42,9 @@ data class TraceMoeResponse(
     ) {
         val formated: String
             get() =
-                "<span><similarity>相似度${similarity.let { if (it<90) "%.2f(较低)".format(it) else "%.2f%".format(it) }}</similarity>\n"+
-                        "位置：第%s集的%s</span>".format(episode?.jsonPrimitive?.content?:"?",from.format)
+                "<span><similarity>相似度${similarity.let { if (it<0.90) "%.2f(较低)".format(it*100) else "%.2f%%".format(it*100) }}</similarity>\n"+
+                        anilist.titleDisplay+"\n"+
+                        "位置：第%s集的%s</span>".format( episode?.jsonPrimitive?.content?:"?",from.format)
 
 
         @Serializable

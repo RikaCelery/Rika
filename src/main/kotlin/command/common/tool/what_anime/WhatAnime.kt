@@ -1,17 +1,17 @@
-package command.common.tool.github.what_anime
+package command.common.tool.what_anime
 
 import events.ExecutionResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.nextMessageOrNull
 import org.celery.command.controller.CommandExecutor
-import org.celery.command.controller.RegexCommand
-import org.celery.command.controller.getConfig
-import org.celery.command.controller.getConfigOrNull
+import org.celery.command.controller.abs.Command
+import org.celery.command.controller.abs.onLocked
+import org.celery.command.controller.abs.throwOnFailure
+import org.celery.command.controller.abs.withlock
 import org.celery.utils.contact.simpleStr
 import org.celery.utils.http.HttpUtils
 import org.celery.utils.selenium.SharedSelenium
@@ -24,30 +24,36 @@ import java.net.URLEncoder
 
 private const val API_TRACE_MOE = "https://api.trace.moe"
 
-object WhatAnime : RegexCommand(
-    "识番", "^识番".toRegex(), 5, "识番[图片]", secondaryRegexs = arrayOf(Regex("^以图搜番"),Regex("^这是什么番"),Regex("^搜动漫"),Regex("^这是什么动漫"))
-) {
-    init{
-        defaultCountLimit = 8
-        showTip = true
-    }
-    override var blockSubjectAction: suspend MessageEvent.() -> Any = {
-        sendMessage(At(sender) + PlainText("你别急！！！，有人用着呢！！！"))
-        delay(1000)
+object WhatAnime: Command(
+    "识番",
+    usage = "识番[图片]"
+){
+
+    @Command("^识番|搜番$|识番$|^搜番\\s*[图片]$|^识番\\s*[图片]$")
+    suspend fun MessageEvent.handle():ExecutionResult{
+        withlock(subject.id,0){
+        process()
+        }.onLocked {
+            sendMessage("急你妈")
+            return ExecutionResult.LimitCall
+        }.throwOnFailure()
+        return ExecutionResult.Success
     }
 
-    @Command
-    suspend fun MessageEvent.handle(): ExecutionResult {
-        var api = getConfig("api", API_TRACE_MOE)
-        val resultSize = getConfig("results", 5)
-        val showAdult = getConfigOrNull("${subject.simpleStr}.${sender.id}.showAdult") ?: getConfig(
-            "${subject.simpleStr}.showAdult", false
-        )
-        val showThumb = getConfigOrNull("${subject.simpleStr}.${sender.id}.showThumb") ?: getConfig(
-            "${subject.simpleStr}.showThumb", false
-        )
+    private suspend fun MessageEvent.process(): ExecutionResult {
+        var api = config.get("api", API_TRACE_MOE)
+        val resultSize = config["results", 5]
+        val showAdult = config.getOrNull("${subject.simpleStr}.${sender.id}.showAdult") ?: config["${subject.simpleStr}.showAdult", false]
+        val showThumb = config.getOrNull("${subject.simpleStr}.${sender.id}.showThumb") ?: config["${subject.simpleStr}.showThumb", false]
 
-        var imageMessage = message.findIsInstance<Image>() ?: CommandExecutor.lastInstanceOrNull<Image>(this)
+        var imageMessage = message.findIsInstance<Image>() ?: CommandExecutor.lastInstanceOrNull<Image>(this)?: run {
+            if (message[QuoteReply]!=null){
+                message[QuoteReply]!!.source.originalMessage.toMessageChain().findIsInstance<Image>()?.also {
+                    println("find${it.imageId}")
+                }
+            } else
+                null
+        }
         if (imageMessage == null) {
             sendMessage(At(sender) + PlainText("图呢图呢图呢？赶紧的赶紧的"))
             imageMessage = nextMessageOrNull(60 * 1000) {
@@ -55,7 +61,7 @@ object WhatAnime : RegexCommand(
                 it.message.findIsInstance<Image>() != null
             }?.findIsInstance<Image>()
             if (imageMessage == null) {
-                sendMessage("图都不发你让我用啥的搜番？")
+                sendMessage("图都不发你让我用啥搜番？")
                 return ExecutionResult.LimitCall
             }
         }
@@ -66,6 +72,7 @@ object WhatAnime : RegexCommand(
         }
 //        println(api)
         val string = HttpUtils.getStringContent(api)
+//        println(string)
         val traceMoeResponse = defaultJson.decodeFromString(TraceMoeResponse.serializer(), string)
         if (traceMoeResponse.results.isEmpty()){
             sendMessage("你妈，我没查到！")
@@ -74,17 +81,16 @@ object WhatAnime : RegexCommand(
         buildMessageChain {
             +At(sender)
             +PlainText("你的搜图结果！！")
-            if (traceMoeResponse.results.maxOf { it.similarity } <= 50) {
+            if (traceMoeResponse.results.maxOf { it.similarity } <= 0.50) {
                 +PlainText("\n我草！这是什么jb相似度😅八成是没搜到")
             }
             +SharedSelenium.render(
                 buildString {
-                    var index = 0
                     traceMoeResponse.results.sortedByDescending { it.similarity }.let { list ->
-                        if (list.any { it1 -> it1.similarity >= 85 }) list.filter { it.similarity >= 85 }
+                        if (list.any { it1 -> it1.similarity >= 0.85 }) list.filter { it.similarity >= 0.85 }
                         else list
-                    }.forEachIndexed { _, result ->
-                        if (index++>resultSize)
+                    }.forEachIndexed { index, result ->
+                        if (index>resultSize)
                             return@forEachIndexed
                         append("<div>")
                         append(result.formated.replace("\n", "<br>"))
@@ -104,7 +110,6 @@ object WhatAnime : RegexCommand(
                     }
                 }.trimIndent(), SauceNaoStyle
             ).toImage(subject)
-
         }.sendTo(subject)
         return ExecutionResult.Success
 

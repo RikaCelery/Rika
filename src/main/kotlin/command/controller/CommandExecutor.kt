@@ -1,22 +1,16 @@
 package org.celery.command.controller
 
-import events.CommandExecutionEvent
-import events.EventCommandExecutionEvent
-import events.ExecutionResult
 import events.ExecutionResult.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import net.mamoe.mirai.event.*
-import net.mamoe.mirai.event.events.GroupEvent
-import net.mamoe.mirai.event.events.GroupMemberEvent
-import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.event.Event
+import net.mamoe.mirai.event.EventHandler
+import net.mamoe.mirai.event.SimpleListenerHost
+import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.SingleMessage
 import net.mamoe.mirai.message.data.findIsInstance
 import net.mamoe.mirai.utils.safeCast
 import org.celery.Rika
-import org.celery.command.controller.BlockRunMode.*
-import java.lang.reflect.InvocationTargetException
+import org.celery.command.controller.abs.AbstractCommand
+import org.celery.data.Coins
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.coroutines.CoroutineContext
 
@@ -30,182 +24,12 @@ event -> findMatch( Command.matches(event)!=null ) -> ExecutionEvent -> execute
 object CommandExecutor : SimpleListenerHost() {
     private val logger = Rika.logger
     private val commands = hashSetOf<EventCommand<*>>()
+    private val commands2 = hashSetOf<AbstractCommand>()
     fun add(c: EventCommand<*>) = commands.add(c)
+    fun add(c: AbstractCommand) = commands2.add(c)
 
     val lastMessages = ConcurrentLinkedDeque<MessageEvent>()
 
-    /**
-     * 执行指令
-     */
-    @EventHandler(priority = EventPriority.HIGHEST)
-    suspend fun CommandExecutionEvent<Event>.handle() {
-        val result: ExecutionResult = when (eventCommand.getBlockRunMode(call.commandId)) {
-            Global -> with(Limitable) {
-                if (blockGlobal[call.commandId] == true) {
-                    eventCommand.safeCast<RegexCommand>()?.blockGlobalAction?.let {
-                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
-                    }
-
-                    Ignored("blockGlobal blocked.")
-                } else {
-                    blockGlobal[call.commandId] = true
-                    val executionResult = try {
-                        reactor()
-                    } catch (e: InvocationTargetException) {
-                        Failed(e.cause, e.cause?.message)
-                    } catch (e: Exception) {
-                        Failed(exception = e, message = e.message)
-                    } finally {
-                        blockGlobal[call.commandId] = false
-                    }
-                    executionResult
-                }
-            }
-            Subject -> with(Limitable) {
-                val commandName = call.commandId
-                if (blockSubject[commandName]?.contains(call.subjectId) == true) {
-                    eventCommand.safeCast<RegexCommand>()?.blockSubjectAction?.let {
-                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
-                    }
-                    Ignored("blockSubject blocked.")
-                } else {
-                    blockSubject[commandName]?.add(call.subjectId) ?: blockSubject.put(
-                        commandName,
-                        mutableListOf(call.subjectId)
-                    )
-                    val executionResult = try {
-                        reactor()
-                    } catch (e: InvocationTargetException) {
-                        Failed(e.cause, e.cause?.message)
-                    } catch (e: Exception) {
-                        Failed(exception = e, message = e.message)
-                    } finally {
-                        blockSubject[call.commandId]?.remove(call.subjectId)
-                    }
-                    executionResult
-                }
-            }
-            User -> with(Limitable) {
-                if (blockUser[call.commandId]?.contains(call.userId) == true) {
-                    eventCommand.safeCast<RegexCommand>()?.blockUserAction?.let {
-                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
-                    }
-                    Ignored("blockUser blocked.")
-                } else {
-                    blockUser[call.commandId]?.add(call.userId) ?: blockUser.put(
-                        call.commandId,
-                        mutableListOf(call.userId)
-                    )
-                    val executionResult = try {
-                        reactor()
-                    } catch (e: InvocationTargetException) {
-                        Failed(e.cause, e.cause?.message)
-                    } catch (e: Exception) {
-                        Failed(exception = e, message = e.message)
-                    } finally {
-                        blockUser[call.commandId]?.remove(call.userId)
-                    }
-                    executionResult
-
-                }
-            }
-            PureUser -> with(Limitable) {
-                if (blockUser[call.commandId]?.contains(call.userId) == true) {
-                    eventCommand.safeCast<RegexCommand>()?.blockPureUserAction?.let {
-                        fromEvent.safeCast<MessageEvent>()?.let { it1 -> it(it1) }
-                    }
-                    Ignored("blockPureUser blocked.")
-                } else {
-                    blockUser[call.commandId]?.add(call.userId) ?: blockUser.put(
-                        call.commandId,
-                        mutableListOf(call.userId)
-                    )
-                    val executionResult = try {
-                        reactor()
-                    } catch (e: InvocationTargetException) {
-                        Failed(e.cause, e.cause?.message)
-                    } catch (e: Exception) {
-                        Failed(exception = e, message = e.message)
-                    } finally {
-                        blockUser[call.commandId]?.remove(call.userId)
-                    }
-                    executionResult
-
-                }
-            }
-        }
-
-        when (result) {
-            is Success -> {
-                logger.debug("executed successfully.")
-                eventCommand.addCall(call)
-            }
-            is Failed -> {
-                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage(
-                    "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
-                        result.exception?.message ?: result.message?.let {
-                            if (it.length > 100) it.substring(
-                                0..100
-                            ) else it
-                        }
-                    }"
-                )
-                    ?: fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage(
-                        "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
-                            result.exception?.message ?: result.message?.let {
-                                if (it.length > 100) it.substring(
-                                    0..100
-                                ) else it
-                            }
-                        }"
-                    )
-                logger.error(
-                    "exception happened when executing $call caused by ${result.exception}.${
-                        result.exception?.stackTraceToString()?.let { "\n$it" }
-                    }"
-                )
-            }
-            is Ignored -> {
-                logger.debug("ignore reason: ${result.reason}.")
-            }
-            is Unknown -> {
-                logger.warning("unknown status, not add.")
-            }
-            is Error -> {
-                fromEvent.safeCast<GroupEvent>()?.group?.sendMessage(
-                    "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
-                        result.cause?.message?.let {
-                            if (it.length > 100) it.substring(
-                                0..100
-                            ) else it
-                        }
-                    }"
-                )
-                    ?: fromEvent.safeCast<MessageEvent>()?.subject?.sendMessage(
-                        "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
-                            result.cause?.message?.let {
-                                if (it.length > 100) it.substring(
-                                    0..100
-                                ) else it
-                            }
-                        }"
-                    )
-
-                logger.error(
-                    "internal error happened when executing $call caused by ${result.cause}.${
-                        result.cause?.stackTraceToString()?.let { "\n$it" }
-                    }"
-                )
-            }
-            is LimitCall -> {
-                eventCommand.addCall(call)
-                launch {
-                    delay(eventCommand.getCoolDown(eventCommand.commandId).toLong())
-                    eventCommand.removeCall(call)
-                }
-            }
-        }
-    }
 
 
     /**
@@ -214,76 +38,146 @@ object CommandExecutor : SimpleListenerHost() {
      * 原事件会被包装到CommandExecutionEvent中
      */
     @EventHandler
-    suspend fun MessageEvent.listen() {
-        val filter = lastMessages.filter { it.sender == sender && it.subject == subject }
-        if (filter.size >= 2) {
-            lastMessages.remove(filter.first())
-        }
-        lastMessages.add(this)
-        for (cmd in commands.sortedByDescending { it.priority }) {
-//            println(cmd.commandId)
-            val matches = cmd.matches(this@listen)
-            if (matches != null) {
-                logger.debug("find match: ${cmd.commandId}")
-                val call = Call(cmd.commandId, sender.id, subject.id)
-                if (!cmd.canCall(call))
+    suspend fun Event.listen() {
+        for (command in commands2.sortedByDescending { it.priority }) {
+            try {
+                if (!command.triggered(this)) {
                     continue
-                launch {
-                    EventCommandExecutionEvent(
-                        eventCommand = cmd,
-                        fromEvent = this@listen,
-                        matches = matches,
-                        call = call
-                    ) {
-                        logger.debug("executing...")
-                        runBlocking {
-                            cmd.reactor(matches, this@listen, call)
-                        }
-                    }.broadcast()
                 }
-                logger.debug("broadcast success")
-                if (cmd.blockSub)
+                logger.info("find match: ${command.commandId}")
+                if (!command.isEnable()) {
+                    logger.warning("${command.commandId} closed")
+                    continue
+                }
+                if (!command.checkPermission(this)) {
+                    logger.warning("${command.commandId} checkPermission failed")
+                    continue
+                }
+                val (subjectId,userId) = getIds(-1L, -1L)
+                if (command.canCall(subjectId, userId)) {
+                    logger.debug("executing...")
+                    val start = System.currentTimeMillis()
+                    val (result, coin) = command.runCommand(this)
+                    when (result) {
+                        is Error -> {
+                            this.safeCast<GroupEvent>()?.group?.sendMessage(
+                                "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
+                                    result.cause?.message?.let {
+                                        if (it.length > 100) it.substring(
+                                            0..100
+                                        ) else it
+                                    }
+                                }"
+                            )
+                                ?: this.safeCast<MessageEvent>()?.subject?.sendMessage(
+                                    "在执行指令时出现了一个内部错误${result.cause?.javaClass?.simpleName}, ${
+                                        result.cause?.message?.let {
+                                            if (it.length > 100) it.substring(
+                                                0..100
+                                            ) else it
+                                        }
+                                    }"
+                                )
+
+                            logger.error(
+                                "internal error happened when executing $this caused by ${result.cause}.${
+                                    result.cause?.stackTraceToString()?.let { "\n$it" }
+                                }"
+                            )
+                        }
+                        is Failed -> {
+
+                            this.safeCast<GroupEvent>()?.group?.sendMessage(
+                                "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
+                                    result.exception?.message ?: result.message?.let {
+                                        if (it.length > 100) it.substring(
+                                            0..100
+                                        ) else it
+                                    }
+                                }"
+                            )
+                                ?: this.safeCast<MessageEvent>()?.subject?.sendMessage(
+                                    "在执行指令时出现了无法处理的错误${result.exception?.javaClass?.simpleName}, ${
+                                        result.exception?.message ?: result.message?.let {
+                                            if (it.length > 100) it.substring(
+                                                0..100
+                                            ) else it
+                                        }
+                                    }"
+                                )
+                            logger.error(
+                                "exception happened when executing $this caused by ${result.exception}.${
+                                    result.exception?.stackTraceToString()?.let { "\n$it" }
+                                }"
+                            )
+                        }
+                        LimitCall -> {
+                            command.temporaryBan(subjectId, userId, command.getCooldown() * 1L+1)
+                        }
+                        is Ignored -> {
+                            logger.debug("ignored, reason: ${result.reason}.")
+                        }
+                        is Ignored.NoReason -> {
+                            logger.debug("ignored, no reason.")
+                        }
+                        Unknown -> {
+                            logger.warning("unknown status, not add.")
+                        }
+                        Success -> {
+                            Coins[userId] -= coin
+                            if (Coins[userId] < 0) Coins[userId] = 0
+                            command.increaseCount(subjectId, userId)
+                        }
+                    }
+                    logger.debug("executed sucessfully cost:${System.currentTimeMillis() - start}ms")
+                } else
+                    logger.warning("${command.commandId} can not use")
+                if (command.blockSub){
                     break
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
-    /**
-     * 从消息/事件中识别指令
-     *
-     * 原事件会被包装到CommandExecutionEvent中
-     */
-    @EventHandler
-    suspend fun GroupMemberEvent.listen2() {
-        if (this is MessageEvent)
-            return
-        for (cmd in commands.sortedByDescending { it.priority }) {
-//            println(cmd.commandId)
-            val matches = cmd.matches(this@listen2)
-            if (matches != null) {
-                logger.debug("find match: ${cmd.commandId}")
-                val call = Call(cmd.commandId, member.id, group.id)
-                if (!cmd.canCall(call))
-                    continue
-                launch {
-                    EventCommandExecutionEvent(
-                        eventCommand = cmd,
-                        fromEvent = this@listen2,
-                        matches = matches,
-                        call = call
-                    ) {
-                        logger.debug("executing...")
-                        runBlocking {
-                            cmd.reactor(matches, this@listen2, call)
-                        }
-                    }.broadcast()
-                }
-                logger.debug("broadcast success")
-                if (cmd.blockSub)
-                    break
-            }
+    private fun Event.getIds(
+        defaultSubjectId: Long,
+        defaultUserId: Long
+    ): Pair<Long, Long> {
+        var subjectId1 = defaultSubjectId
+        var userId1 = defaultUserId
+        if (this is MemberMuteEvent) {
+            subjectId1 = group.id
+            userId1 = member.id
         }
+        if (this is MemberUnmuteEvent) {
+            subjectId1 = group.id
+            userId1 = member.id
+        }
+        if (this is BotMuteEvent) {
+            subjectId1 = group.id
+            userId1 = bot.id
+        }
+        if (this is BotUnmuteEvent) {
+            subjectId1 = group.id
+            userId1 = bot.id
+        }
+        if (this is MessageEvent) {
+            subjectId1 = subject.id
+            userId1 = sender.id
+        }
+        if (this is NudgeEvent) {
+            subjectId1 = subject.id
+            userId1 = from.id
+        }
+        if (this is GroupMemberEvent) {
+            subjectId1 = group.id
+            userId1 = member.id
+        }
+        return Pair(subjectId1, userId1)
     }
+
 
     override fun handleException(context: CoroutineContext, exception: Throwable) {
         exception.printStackTrace()
@@ -291,7 +185,8 @@ object CommandExecutor : SimpleListenerHost() {
 
 
     inline fun <reified M : SingleMessage?> lastInstanceOrNull(messageEvent: MessageEvent): M? =
-        lastMessages.reversed().find { it.sender==messageEvent.sender&&it.subject==messageEvent.subject&&it.message.findIsInstance<M>()!=null }?.message?.findIsInstance<M>()
+        lastMessages.reversed()
+            .find { it.sender == messageEvent.sender && it.subject == messageEvent.subject && it.message.findIsInstance<M>() != null }?.message?.findIsInstance<M>()
 
 
 }

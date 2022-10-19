@@ -1,4 +1,4 @@
-package org.celery.command.common.group.`fun`.banme
+package command.common.group.funny.banme
 
 import events.ExecutionResult
 import kotlinx.coroutines.delay
@@ -8,17 +8,16 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.content
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.interact.nextMessage
 import org.celery.utils.sendMessage
 
-object Banme : RegexCommand(
-    "banme", "^/?banme".toRegex(), normalUsage = "banme",
-    description = "娱乐禁言",
+object Banme : Command(
+    "banme"
 ) {
     private val rander = kotlin.random.Random
 
-    @Command
+    @Command("^/?banme")
     suspend fun GroupMessageEvent.on(): ExecutionResult {
         if (!group.botAsMember.isOperator()) {
             return ExecutionResult.Ignored("not operator.")

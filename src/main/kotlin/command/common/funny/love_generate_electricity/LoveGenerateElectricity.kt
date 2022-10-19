@@ -1,4 +1,4 @@
-package org.celery.command.common.love_generate_electricity
+package command.common.funny.love_generate_electricity
 
 import events.ExecutionResult
 import net.mamoe.mirai.contact.nameCardOrNick
@@ -8,36 +8,36 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.apache.commons.text.StringEscapeUtils
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
-import org.celery.utils.file.FileTools
+import org.celery.command.controller.abs.Command
 import org.celery.utils.contact.GroupTools
+import org.celery.utils.file.FileTools
 import org.celery.utils.selenium.Selenium
 import org.celery.utils.sendMessage
 import org.openqa.selenium.Dimension
 import java.util.*
 
-object LoveGenerateElectricity : RegexCommand(
-    "爱发电", "^爱发电\\s*(.*)".toRegex(), description = "发电时间到！", secondaryRegexs = arrayOf(Regex("^每日发电\\s*(.*)"), Regex("^每日发癫\\s*(.*)"))
+object LoveGenerateElectricity : Command(
+    "爱发电"
 ) {
     val list: List<String>
         get() {
-            var sb = StringJoiner("\n")
-            val strings = mutableListOf<String>()
-            getOrCreateDataFile("爱发电.txt").readLines().forEach {
-                if (it.isBlank()) {
-                    strings.add(sb.toString())
-                    sb = StringJoiner("\n")
-                } else {
-                    sb.add(it)
-                }
+        var sb = StringJoiner("\n")
+        val strings = mutableListOf<String>()
+        getOrCreateDataFile("爱发电.txt").readLines().forEach { line ->
+            if (line==config["seprator", "##########"]) {
+                strings.add(sb.toString())
+                sb = StringJoiner("\n")
+            } else {
+                sb.add(line)
             }
-            strings.add(sb.toString())
-            return strings.filterNot(String::isBlank)
         }
+        strings.add(sb.toString())
+        return strings.filterNot(String::isBlank)
+    }
 
     private val selenium by lazy { Selenium(false) }
 
-    @Command
+    @Command("^爱发电\\s*(.*)")
     suspend fun GroupMessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         if (list.isEmpty()) {
             logger.warning("没有发电文案(爱发电.txt)")

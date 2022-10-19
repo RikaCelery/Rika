@@ -45,7 +45,7 @@ abstract class AutoReloadable(private val fileName: String, prettyPrint: Boolean
 
     abstract fun load()
     abstract fun save()
-    val timer:Timer = timer("auto-save-timer-for:$fileName", true, 0, 500) {
+    val timer:Timer = timer("auto-save-timer-for:$fileName", true, 0, 1000) {
         if (pluginConfigsFile.lastModified() != lastModified) {
             lastModified = pluginConfigsFile.lastModified()
             try {

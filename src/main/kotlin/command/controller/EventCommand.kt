@@ -400,7 +400,7 @@ private fun Contact.isSuperUser(): Boolean {
     return id == botOwner || (id in superUsers)
 }
 
-data class EventMatchResult(private val result: MatchResult?, private val index: Int = 0, val data: Any? = null) {
+data class EventMatchResult(private val result: MatchResult?=null, private val index: Int = 0, val data: Any? = null) {
     operator fun get(index: Int) = result!!.groupValues[index]
 
     @JvmName("getResult1")
@@ -421,4 +421,9 @@ data class EventMatchResult(private val result: MatchResult?, private val index:
     fun getIndexedResult(): Pair<Int, MatchResult> {
         return index to result!!
     }
+
+    override fun toString(): String {
+        return "EventMatchResult(result=$result, index=$index, data=$data)"
+    }
+
 }

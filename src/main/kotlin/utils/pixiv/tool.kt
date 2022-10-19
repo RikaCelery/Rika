@@ -1,8 +1,8 @@
 package org.celery.utils.pixiv
 
 import io.ktor.http.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import org.celery.Rika
 import org.celery.utils.pixiv.PixivManager.saveAll
 import org.celery.utils.pixiv.pixivClient.PixivClientPool
@@ -29,9 +29,13 @@ private val logger = Rika.logger
 @Suppress("unused")
 suspend fun IllustInfo.getFiles(n: Int? = null): MutableList<File> {
     val list = mutableListOf<File>()
-    supervisorScope {
+    coroutineScope {
         this@getFiles.save()
-        getOriginImageUrls().forEachIndexed { index, url ->
+        getOriginImageUrls().let {
+            if (n == null) {
+                it
+            } else it.take(n)
+        }.forEachIndexed { index, url ->
             if (n != null && index >= n) return@forEachIndexed
             launch {
                 if (Rika.DEBUG_MODE) logger.debug("${url.fullPath.substringAfterLast('/')}下载中...")

@@ -13,7 +13,6 @@ fun User?.isSuperUser(): Boolean {
         return true
     return MainConfig.superUsers.contains(id) || MainConfig.botOwner == id
 }
-
 /**
  * 检查调用者是否是群管理， 超级用户， console
  *

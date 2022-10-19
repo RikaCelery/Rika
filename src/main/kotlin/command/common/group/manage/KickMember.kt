@@ -10,19 +10,14 @@ import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.QuoteReply
 import net.mamoe.mirai.utils.cast
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.contact.GroupTools
 import org.celery.utils.permission.isSuperUser
 
-object KickMember : RegexCommand(
-    "踢人", "^(?:kick|踢人?)\\s*(.+)".toRegex(), normalUsage = "kick|踢人 <群员>",
-    description = "踢人,仅管理员可用",
+object KickMember : Command(
+    "踢人"
 ) {
-    init{
-        defaultCountLimit = 300
-        defaultCoolDown = 0
-    }
-    @Command(executePermission = [ExecutePermission.Operator])
+    @Command("^(?:kick|踢人?)\\s*(.+)", permissions = arrayOf(RequirePermission.MEMBER,RequirePermission.OPERATOR))
     suspend fun GroupMessageEvent.onload(eventMatchResult: EventMatchResult): ExecutionResult {
         val member = GroupTools.getUserOrNull(group,eventMatchResult.getResult().groupValues[1])?.cast<NormalMember>()
         val targetMember = member ?: group.get(message[QuoteReply.Key]!!.source.fromId)

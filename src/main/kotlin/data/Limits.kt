@@ -4,8 +4,12 @@ import kotlinx.serialization.modules.SerializersModule
 import net.mamoe.mirai.console.data.AutoSavePluginData
 import net.mamoe.mirai.console.data.value
 import net.mamoe.mirai.event.events.GroupMessageEvent
+import org.celery.Rika
+import org.celery.Rika.reload
 import xyz.cssxsh.pixiv.AgeLimit
 import xyz.cssxsh.pixiv.SanityLevel
+import java.util.*
+import kotlin.concurrent.timer
 
 object Limits : AutoSavePluginData("limits") {
     override val serializersModule: SerializersModule = SerializersModule {
@@ -109,5 +113,16 @@ object Limits : AutoSavePluginData("limits") {
         if (setuUseCount[groupId]!![userId]!! > getCountLimit(userId, groupId) + 1)
             setCountNow(userId, groupId, getCountLimit(userId, groupId))
     }
-
+    private val resolveConfigFile = Rika.resolveDataFile("limits.yml")
+    private var lastModified = resolveConfigFile.lastModified()
+    private val reloader: Timer = timer("auto-reloader", true, 0, 1000) {
+        if (lastModified != resolveConfigFile.lastModified()) {
+            try {
+                reload()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            lastModified = resolveConfigFile.lastModified()
+        }
+    }
 }

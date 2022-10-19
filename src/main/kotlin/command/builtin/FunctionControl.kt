@@ -3,50 +3,126 @@ package org.celery.command.builtin
 import events.ExecutionResult
 import net.mamoe.mirai.console.command.ConsoleCommandSender
 import net.mamoe.mirai.console.command.SimpleCommand
+import net.mamoe.mirai.contact.isOperator
+import net.mamoe.mirai.event.events.FriendMessageEvent
+import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import org.celery.Rika
-import org.celery.command.controller.CCommand
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
-import kotlin.reflect.jvm.jvmName
+import org.celery.command.controller.abs.Command
+import org.celery.utils.permission.isSuperUser
+import org.celery.utils.sendMessage
+
 
 /**
  * 开关某个指令
  */
-object FunctionCallControl : RegexCommand(
-    "功能开关",
-    "(开启|关闭)\\s*(.+)".toRegex(),
-    normalUsage = "开启|关闭<功能名>",
-    description = "开启或关闭某个功能"
+object FunctionCallControl : Command(
+    "功能开关",100,
+    "管理",
+    "开启或关闭某个功能",
+    "开启|关闭<功能名>",
 ) {
-    @Command(ExecutePermission.Operator)
-    suspend fun MessageEvent.handle(matchResult: EventMatchResult): ExecutionResult {
-        val mode = matchResult.getResult().groupValues[1]
-        val commands = if (matchResult[2]=="*") Rika.allRegisteredCommand.filterNot { it::class.jvmName.contains("builtin") } else
-            Rika.allRegisteredCommand.filter { it.commandId.equals(matchResult.getResult().groupValues[2].trim(), true) }.ifEmpty { null }
-                ?: return ExecutionResult.Ignored("command not found.")
-        when (mode) {
-            "开启" -> {
-                if (subject == sender) {
-                    commands.forEach(CCommand::enable)
-                    subject.sendMessage("OK")
-                } else {
-                    commands.forEach { it.enableFor(subject.id) }
-                }
+    private fun getCommands(matchResult: EventMatchResult) =
+        Rika.allRegisteredCommand2.filter { it.commandId.equals(matchResult[1].trim(), true) }.ifEmpty { null }
+
+    @Command("^开启\\s*(.*)")
+    suspend fun MessageEvent.handleEnable(eventMatchResult: EventMatchResult): ExecutionResult {
+        when (this) {
+            is FriendMessageEvent -> {
+                if (sender.isSuperUser())
+                    return enable(eventMatchResult)
             }
-            "关闭" -> {
-                if (subject == sender) {
-                    commands.forEach(CCommand::disable)
-                    subject.sendMessage("OK")
-                } else {
-                    commands.forEach { it.disableFor(subject.id) }
-                }
+            is GroupMessageEvent -> {
+                if (sender.isOperator() || sender.isSuperUser())
+                    return enableInGroup(eventMatchResult)
             }
-            else -> return ExecutionResult.Ignored("mode:$mode is invalid.")
+            else->{}
         }
+        return ExecutionResult.Ignored
+    }
+
+    private suspend fun FriendMessageEvent.enable(matchResult: EventMatchResult): ExecutionResult {
+
+        val commands = getCommands(matchResult)
+        if (commands == null) {
+            sendMessage(config["command_not_found", "没找到"])
+            return ExecutionResult.Ignored("command not found.")
+        }
+        val map = commands.associateWith {
+            it.enable()
+        }
+        sendMessage(
+            map.mapKeys { it.key.commandId }.toList()
+                .joinToString { it.first + ": " + if (it.second) "开启成功" else "已开启" })
+        return ExecutionResult.Success
+    }
+
+    private suspend fun GroupMessageEvent.enableInGroup(matchResult: EventMatchResult): ExecutionResult {
+
+        val commands = getCommands(matchResult)
+        if (commands == null) {
+            sendMessage(config["command_not_found", "没找到"])
+            return ExecutionResult.Ignored("command not found.")
+        }
+        val map = commands.associateWith {
+            it.cleanTemporary(subject.id)
+        }
+        sendMessage(
+            map.mapKeys { it.key.commandId }.toList()
+                .joinToString { it.first + ": " + if (it.second) "开启成功" else "已开启或全局禁用" })
+        return ExecutionResult.Success
+    }
+
+    @Command("关闭\\s*(.*)")
+    suspend fun MessageEvent.handleDisable(eventMatchResult: EventMatchResult):ExecutionResult{
+        when (this) {
+            is FriendMessageEvent -> {
+                if (sender.isSuperUser())
+                    return disable(eventMatchResult)
+            }
+            is GroupMessageEvent -> {
+                if (sender.isOperator() || sender.isSuperUser())
+                    return disableInGroup(eventMatchResult)
+            }
+            else->{}
+        }
+        return ExecutionResult.Ignored()
+    }
+
+    private suspend fun FriendMessageEvent.disable(matchResult: EventMatchResult): ExecutionResult {
+
+        val commands = getCommands(matchResult)
+        if (commands == null) {
+            sendMessage(config["command_not_found", "没找到"])
+            return ExecutionResult.Ignored("command not found.")
+        }
+        val map = commands.associateWith {
+            it.close()
+        }
+        sendMessage(
+            map.mapKeys { it.key.commandId }.toList()
+                .joinToString { it.first + ": " + if (it.second) "关闭成功" else "已关闭" })
+        return ExecutionResult.Success
+    }
+
+    private suspend fun GroupMessageEvent.disableInGroup(matchResult: EventMatchResult): ExecutionResult {
+
+        val commands = getCommands(matchResult)
+        if (commands == null) {
+            sendMessage(config["command_not_found", "没找到"])
+            return ExecutionResult.Ignored("command not found.")
+        }
+        val map = commands.associateWith {
+            it.closeTemporarily(subject.id)
+        }
+        sendMessage(
+            map.mapKeys { it.key.commandId }.toList()
+                .joinToString { it.first + ": " + if (it.second) "关闭成功" else "已关闭或全局禁用" })
         return ExecutionResult.Success
     }
 }
+
 
 /**
  * 开某个指令(控制台)
@@ -57,13 +133,13 @@ object ConsoleFunctionCallControlEnable : SimpleCommand(
     @Handler
     suspend fun ConsoleCommandSender.handle(commandId: String) {
         if (commandId == "*") {
-            Rika.allRegisteredCommand.forEach {
+            Rika.allRegisteredCommand2.forEach {
                 it.enable()
             }
             sendMessage("OK")
             return
         }
-        val command = Rika.allRegisteredCommand.singleOrNull { it.commandId.equals(commandId, true) }
+        val command = Rika.allRegisteredCommand2.singleOrNull { it.commandId.equals(commandId, true) }
             ?: error("command not found.")
         command.enable()
         sendMessage("OK")
@@ -79,16 +155,16 @@ object ConsoleFunctionCallControlDisable : SimpleCommand(
     @Handler
     suspend fun ConsoleCommandSender.handle(commandId: String) {
         if (commandId == "*") {
-            Rika.allRegisteredCommand.forEach {
+            Rika.allRegisteredCommand2.forEach {
                 if (it.commandId != FunctionCallControl.commandId)
-                    it.disable()
+                    it.close()
             }
             sendMessage("OK")
             return
         }
-        val command = Rika.allRegisteredCommand.singleOrNull { it.commandId.equals(commandId, true) }
+        val command = Rika.allRegisteredCommand2.singleOrNull { it.commandId.equals(commandId, true) }
             ?: error("command not found.")
-        command.disable()
+        command.close()
         sendMessage("OK")
     }
 }

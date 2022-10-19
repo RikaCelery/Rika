@@ -235,7 +235,7 @@ object HttpUtils {
         else if (response.headers["Content-Encoding"] == "br") {
             logger.info("Content-Encoding: br")
             // 解压数据
-            val reader = BufferedReader(InputStreamReader(BrotliInputStream(response.body!!.byteStream())))
+            val reader = BufferedReader(InputStreamReader(BrotliInputStream(response.body!!.byteStream()),"utf8"))
 
             val content = buildString {
                 var line = ""

@@ -1,4 +1,4 @@
-package command.common.tool.github.saucenao
+package command.common.tool.saucenao
 
 
 import kotlinx.serialization.SerialName
@@ -176,6 +176,25 @@ data class SauceNaoResponse(
                         标题-EN:${data.jpName}
                         标题-JP:${data.engName}
                         作者:${data.creator?.content }
+                    """.trimIndent()
+                    39 -> """
+                        <db-name>[Artstation]</db-name> 
+                        ${header.indexName}
+                        asProject:${data.asProject}
+                        作者:${data.authorName}
+                        作者URL:${data.authorUrl}
+                        标题:${data.title}
+                        fa_id:${data.title}
+                        ext_urls:${data.extUrls?.joinToString("\n", "\n")}
+                    """.trimIndent()
+                    40 -> """
+                        <db-name>[FurAffinity]</db-name> 
+                        ${header.indexName}
+                        作者:${data.authorName}
+                        作者URL:${data.authorUrl}
+                        标题:${data.title}
+                        fa_id:${data.title}
+                        ext_urls:${data.extUrls?.joinToString("\n", "\n")}
                     """.trimIndent()
                     41 -> """
                         <db-name>[Twitter]</db-name> 

@@ -71,7 +71,7 @@ object SetuPixivLazyLib : SetuLib {
 
             statement.executeQuery().asIterable().map { SetuPixivLazy(it.getLong("pid")) }
         }?.also {
-            println("time:${System.currentTimeMillis()-time}ms $tag: "+it.joinToString {it.pid.toString()})
+            logger.debug("cost:${System.currentTimeMillis()-time}ms $tag: "+it.joinToString {it.pid.toString()})
         }
     }
 
@@ -90,9 +90,9 @@ object SetuPixivLazyLib : SetuLib {
         val list = mutableListOf<Setu>()
         PixivSql.database?.illusts?.mapColumnsNotNull { it.pid }?.forEach {
             list.add(SetuPixivLazy(it))
-        }
+        }?:return
         cache.clear()
         cache = list
-        logger.info { "成功初始化pixiv图库,当前大小: "+ cache.size }
+        logger.info { "重载pixiv图库成功,当前大小: "+ cache.size }
     }
 }

@@ -1,25 +1,41 @@
 package org.celery.command.common.funny
 
-import net.mamoe.mirai.Bot
+import events.ExecutionResult
 import net.mamoe.mirai.event.events.MessageEvent
-import org.celery.command.controller.BlockRunMode
-import org.celery.command.controller.Call
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.data.Coins
+import org.celery.data.TempData
+import org.celery.utils.contact.simpleStr
+import org.celery.utils.number.getRandomer
 import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeUtils
 import kotlin.random.Random
 
-object MyLuck : RegexCommand("今日运气", "^vdluck".toRegex(), normalUsage = "vdluck") {
-    init{
-        defaultCountLimit = 8
-        defaultCallCountLimitMode = BlockRunMode.PureUser
-        defaultCoolDown = 2000
-    }
-    private val rander = Random
+object MyLuck : Command(
+    "今日运气"
+){
 
-    @Command
-    suspend fun MessageEvent.handle() {
+    private fun MessageEvent.randomer(): Random {
+        return getRandomer(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
+    }
+
+    private val rander = Random
+    @Command("^vdluck$")
+    suspend fun MessageEvent.handle(): ExecutionResult {
+        val key = commandId + "." + sender.simpleStr
+        val index = TempData[key,0]
+        when(index){
+            0->handle0()
+            1->handle2()
+            2->handle3()
+            3->handle8()
+            4->handle9()
+            else ->return ExecutionResult.LimitCall
+        }
+        TempData[key] = index+1
+        return ExecutionResult.Success
+    }
+    private suspend fun MessageEvent.handle0() {
         val random = Random(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
         sendMessage(buildString {
             val luck = random.nextInt(0, 1000).toFloat().div(10)
@@ -44,65 +60,49 @@ object MyLuck : RegexCommand("今日运气", "^vdluck".toRegex(), normalUsage = 
         })
     }
 
-    @Command(repeat = 2)
     suspend fun MessageEvent.handle2() {
-        val random = Random(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
+        val random = randomer()
         sendMessage(buildString {
             append("他妈 你个逼失忆了？不都跟你说过今天你人品值是%.1f了嘛！".format(random.nextInt(0, 1000).toFloat().div(10)))
         })
     }
 
-    @Command(repeat = 3)
+
     suspend fun MessageEvent.handle3() {
-        val random = Random(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
+        val random = randomer()
         sendMessage(buildString {
             append("草你吗 你失忆了？？？你人品值是他妈的%.1f".format(random.nextInt(0, 1000).toFloat().div(10)))
         })
     }
 
-    @Command(repeat = 4)
     suspend fun MessageEvent.handle4() {
         sendMessage(buildString {
             append("还问？还问？还问？我刚刚不是说了？？？？")
         })
     }
 
-    @Command(repeat = 5)
     suspend fun MessageEvent.handle5() {
         sendMessage(buildString {
             append("我是你爹啊什么都得听你的 我就不他妈的说")
         })
     }
 
-    @Command(repeat = 6)
     suspend fun MessageEvent.handle6() {
         sendMessage(buildString {
             append("别来烦我了！！！操你吗")
         })
     }
 
-    @Command(repeat = 7)
     suspend fun MessageEvent.handle8() {
         sendMessage(buildString {
             append("不准你再vdluck了，老子要睡觉了")
         })
     }
 
-    @Command(repeat = 8)
     suspend fun MessageEvent.handle9() {
-        val random = Random(sender.id + TimeUtils.getNowYear() + TimeUtils.getNowMonth() + TimeUtils.getNowDay())
+        val random = randomer()
         sendMessage(buildString {
             append("你人品值%.1f 别来烦我了！！！！".format(random.nextInt(0, 1000).toFloat().div(10)))
         })
-    }
-
-    override suspend fun Bot.limitNotice(call: Call, finalLimit: Int) {
-//        val contact = getGroupOrFail(call.subjectId!!)
-//        contact.sendMessage(
-//            buildMessageChain {
-//                val random = Random(call.userId!!+TimeUtils.getNowYear()+TimeUtils.getNowMonth()+TimeUtils.getNowDay())
-//                append("你人品值%.1f 别来烦我了！！！！".format(random.nextInt(0,1000).toFloat().div(10)))
-//            }
-//        )
     }
 }
