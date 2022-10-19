@@ -4,11 +4,11 @@ import events.ExecutionResult
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.content
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
+import net.mamoe.mirai.utils.ExternalResource.Companion.uploadAsImage
 import okhttp3.internal.toHexString
 import org.celery.command.common.funny.emoji_mix.EmojiConsts.EMOJI_REGEX
-import org.celery.command.controller.BlockRunMode
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.http.HttpUtils
 import java.io.File
 
@@ -16,26 +16,23 @@ import java.io.File
 
 private val LAST_UPDATE = "2022-03-11T23:19:31Z"
 
-object EmojiMix : RegexCommand(
+object EmojiMix : Command(
     commandId = "表情混合",
-    regex = EMOJI_REGEX.toRegex(),
     priority = 4,
-    normalUsage = "<emoji1><emoji2>",
+    usage = "<emoji1><emoji2>",
     description = "混合两个emoji表情",
     example = "😂🤣",
 ) {
-    init {
-        defaultCallCountLimitMode = BlockRunMode.Subject
-    }
     @Command
     suspend fun MessageEvent.nn(matchResult: EventMatchResult): ExecutionResult {
         val result1 = matchResult.getAllMatches().random()
         val result2 = matchResult.getAllMatches().apply { remove(result1) }.random()
-        val emos:List<String> = matchResult.getAllMatches().joinToString("").codePoints().toArray().map { it.toHexString() }
+        val emos: List<String> =
+            matchResult.getAllMatches().joinToString("").codePoints().toArray().map { it.toHexString() }
         val e1 = result1.codePoints().toArray().first()
         val e2 = result2.codePoints().toArray().first()
-        val emo1 = e1.toHexString()
-        val emo2 = e2.toHexString()
+//        val emo1 = e1.toHexString()
+//        val emo2 = e2.toHexString()
         val fileNamePrefix = emos.sorted().joinToString("+")
 
         val file = getDataFile("emojiMix").listFiles { it: File ->
@@ -43,36 +40,42 @@ object EmojiMix : RegexCommand(
         }?.singleOrNull() ?: getDataFile("emojiMix/$fileNamePrefix.png")
         if (file.exists()) {
             file.toExternalResource().use {
-                subject.sendMessage(subject.uploadImage(it))
+                try {
+                    subject.sendMessage(it.uploadAsImage(subject))
+                } catch (e: Exception) {
+                    logger.error(e)
+                }
             }
-        } else
+        } else try {
+            getMix(e1, e2).let {
+                if (it.isEmpty()) return@let
+                it.toExternalResource().use {
+                    subject.sendMessage(subject.uploadImage(it))
+                }
+                file.writeBytes(it)
+            }
+        } catch (e: Exception) {
             try {
-                getMix(e1, e2).let {
+                getMix(e2, e1).let {
+                    if (it.isEmpty()) return@let
                     it.toExternalResource().use {
                         subject.sendMessage(subject.uploadImage(it))
                     }
                     file.writeBytes(it)
                 }
             } catch (e: Exception) {
-                try {
-                    getMix(e2, e1).let {
-                        it.toExternalResource().use {
-                            subject.sendMessage(subject.uploadImage(it))
-                        }
-                        file.writeBytes(it)
-                    }
-                } catch (e: Exception) {
-                    return ExecutionResult.Ignored("表情$result1+$result1,未找到匹配的混合图($fileNamePrefix),已忽略")
-                }
+                return ExecutionResult.Ignored("表情$result1+$result1,未找到匹配的混合图($fileNamePrefix),已忽略")
             }
+        }
         return ExecutionResult.Success
 
     }
 
     private fun getMix(a: Int, b: Int): ByteArray {
-
+        val api1 = getApi(a) ?: throw Exception("no match")
+        //"https://www.gstatic.com/android/keyboard/emojikitchen/$api1/u${a.toHexString()}/u${a.toHexString()}_u${b.toHexString()}.png"
         val api =
-            "https://www.gstatic.com/android/keyboard/emojikitchen/${getApi(a)}/u${a.toHexString()}/u${a.toHexString()}_u${b.toHexString()}.png"
+        "https://www.gstatic.com/android/keyboard/emojikitchen/%d/u%x/u%x_u%x.png".format(api1, a, a, b)
 
         return HttpUtils.downloader(api)
     }
@@ -274,14 +277,15 @@ object EmojiMix : RegexCommand(
         return map[codePoint]
     }
 
-    @Matcher
-    override suspend fun MessageEvent.match(): EventMatchResult? {
-        return regex.find(message.content)?.let {
-            if (it.next() != null)
-                EventMatchResult(it)
-            else
-                null
+    private val regex = EMOJI_REGEX.toRegex()
+
+    @Trigger("nn")
+    fun MessageEvent.matchw(): EventMatchResult? {
+        val let = regex.find(message.content)?.let {
+            if (it.next() != null) EventMatchResult(it)
+            else null
         }
+        return let
     }
 
 }

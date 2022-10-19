@@ -1,7 +1,7 @@
 package org.celery.utils.file
 
-import org.celery.Rika
 import org.apache.commons.codec.binary.Hex
+import org.celery.Rika
 import java.io.File
 import java.security.MessageDigest
 
@@ -14,6 +14,8 @@ val ByteArray.md5: String
 fun File.createParentFolder(): File {
     if (!parentFile.exists()) {
         parentFile.mkdirs()
+        if (parentFile.exists().not())
+            Rika.logger.error(parent+"创建失败")
     }
     return this
 }

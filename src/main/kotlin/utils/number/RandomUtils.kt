@@ -6,6 +6,9 @@ import kotlin.random.Random
 
 private val random = Random(System.currentTimeMillis())
 
+@Synchronized
+fun getRandomer(seed:Long) = Random(seed)
+
 fun probability(double: Double): Boolean {
     return random.nextFloat().also { Rika.logger.debug { "rand$it" } }<=double
 }
@@ -15,6 +18,6 @@ fun probability(double: Double): Boolean {
  */
 fun randomFloat() = random.nextFloat()
 /**
- * 获取下一个在 0（包括）和 1（不包括）之间均匀分布的随机Float值。
+ * 获取下一个在 [from]（包括）和 [until]（不包括）之间均匀分布的随机Int值。
  */
 fun randomInt(from:Int,until:Int) = random.nextInt(from,until)

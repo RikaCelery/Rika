@@ -1,50 +1,56 @@
-package org.celery.command.common.coins
+package command.builtin.coins
 
-import net.mamoe.mirai.Bot
+import events.ExecutionResult
 import net.mamoe.mirai.event.events.MessageEvent
-import org.celery.command.controller.BlockRunMode
-import org.celery.command.controller.Call
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.data.Coins
+import org.celery.data.TempData
 import org.celery.utils.number.probability
 import org.celery.utils.number.randomInt
 import org.celery.utils.sendMessage
+import org.celery.utils.strings.placeholder
 
-object MyCoins: RegexCommand("我的原石", "^我的原石$".toRegex(), normalUsage = "我的原石") {
-    init{
-        defaultCallCountLimitMode = BlockRunMode.PureUser
+object MyCoins : Command("我的原石") {
+
+
+    @Command("^我的原石\$")
+    suspend fun MessageEvent.handle(): ExecutionResult {
+        val key = commandId+"."+sender.id.toString()
+        val index = TempData[ key, 0]
+        when (index) {
+            0 -> handle0()
+            else -> handle1()
+        }
+        TempData[key] = index + 1
+        return ExecutionResult.Success
     }
 
-
-    @Command
-    suspend fun MessageEvent.handle() {
+    private suspend fun MessageEvent.handle0() {
 
         sendMessage(buildString {
-            append("你现在有${Coins[sender]}个原石")
-            if (probability(0.6)){
-                Coins[sender]+= randomInt(50,1000)
-                append("\n")
-                append("欸嘿我今天心情好再给你点原石")
-                append("\n")
-                append("你现在有${Coins[sender]}个原石")
+            if (probability(config["additional_coins_probability",0.6])) {
+                append(config["coin_now","你现在有{coins}个原石"].placeholder(
+                    "coins" to Coins[sender]
+                ))
+                val randomInt = randomInt(config["additional_coins_min", 50], config["additional_coins_max", 2000])
+                Coins[sender] += randomInt
+                append(config["if_lucky","\n欸嘿我今天心情好再给你点原石"].placeholder(
+                    "coins" to Coins[sender],
+                    "increasement" to randomInt
+                ))
             }
+            append(config["coin_now","你现在有{coins}个原石"].placeholder(
+                "coins" to Coins[sender]
+            ))
         })
     }
 
-    @Command(repeat = 2)
-    suspend fun MessageEvent.handle2() {
+    private suspend fun MessageEvent.handle1() {
 
         sendMessage(buildString {
-            append("你现在有${Coins[sender]}个原石")
+            append(config["coin_now","你现在有{coins}个原石"].placeholder(
+                "coins" to Coins[sender]
+            ))
         })
-    }
-    override suspend fun Bot.limitNotice(call: Call, finalLimit: Int) {
-//        val contact = getGroupOrFail(call.subjectId!!)
-//        contact.sendMessage(
-//            buildMessageChain {
-//                val random = Random(call.userId!!+TimeUtils.getNowYear()+TimeUtils.getNowMonth()+TimeUtils.getNowDay())
-//                append("你人品值%.1f 别来烦我了！！！！".format(random.nextInt(0,1000).toFloat().div(10)))
-//            }
-//        )
     }
 }

@@ -1,18 +1,17 @@
-package org.celery.command.common.saucenao
+package command.common.tool.saucenao
 
-import command.common.tool.github.saucenao.SauceNaoResponse
 import events.ExecutionResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.nextMessageOrNull
 import org.celery.command.controller.CommandExecutor
-import org.celery.command.controller.RegexCommand
-import org.celery.command.controller.getConfig
-import org.celery.command.controller.getConfigOrNull
+import org.celery.command.controller.abs.Command
+import org.celery.command.controller.abs.onLocked
+import org.celery.command.controller.abs.throwOnFailure
+import org.celery.command.controller.abs.withlock
 import org.celery.utils.contact.simpleStr
 import org.celery.utils.http.HttpUtils
 import org.celery.utils.selenium.SharedSelenium
@@ -24,46 +23,55 @@ import java.net.URLEncoder
 
 private const val SAUCENAO_INIT_KEY = "请填写saucenao api key"
 
-object SauceNaoPicSearch : RegexCommand(
-    "识图", "^识图".toRegex(), 5, "识图[图片]", secondaryRegexs = arrayOf(Regex("^以图搜图"))
+
+object SauceNaoPicSearch : Command(
+    "识图",5, "实用工具",
+    "saucenao以图搜图",
+    "识图[图片]",
+    "maxresult: 一次性最多返回多少个仓库信息\nshow_link: 发送仓库全名",
+    ""
 ) {
-    init{
-        defaultCountLimit = 8
-        showTip = true
-    }
-    override var blockSubjectAction: suspend MessageEvent.() -> Any = {
-        sendMessage(At(sender) + PlainText("你别急！！！，有人用着呢！！！"))
-        delay(1000)
+    @Command("^识图|搜图$|识图$|^搜图\\s*[图片]$|^识图\\s*[图片]$")
+    suspend fun MessageEvent.handle():ExecutionResult{
+        withlock(subject.id,0){
+        process()
+        }.onLocked {
+            sendMessage("急你妈")
+            return ExecutionResult.LimitCall
+        }.throwOnFailure()
+        return ExecutionResult.Success
     }
 
-    @Command
-    suspend fun MessageEvent.handle(): ExecutionResult {
-        val key = getConfig("key", SAUCENAO_INIT_KEY)
+    private suspend fun MessageEvent.process(): ExecutionResult {
+        val key = config["key", SAUCENAO_INIT_KEY]
         if (key == SAUCENAO_INIT_KEY) {
             logger.warning("未配置api key,请到pluginConfig.json中配置")
             return ExecutionResult.Ignored("未配置key")
         }
-        val resultSize = getConfig("results", 5)
-        val showAdult = getConfigOrNull("${subject.simpleStr}.${sender.id}.showAdult") ?: getConfig(
-            "${subject.simpleStr}.showAdult", false
-        )
-        val showThumb = getConfigOrNull("${subject.simpleStr}.${sender.id}.showThumb") ?: getConfig(
-            "${subject.simpleStr}.showThumb", false
-        )
+        val resultSize = config["results", 5]
+        val showAdult = config.getOrNull("${subject.simpleStr}.${sender.id}.showAdult") ?: config["${subject.simpleStr}.showAdult", false]
+        val showThumb = config.getOrNull("${subject.simpleStr}.${sender.id}.showThumb") ?: config["${subject.simpleStr}.showThumb", false]
 
-        var imageMessage = message.findIsInstance<Image>() ?: CommandExecutor.lastInstanceOrNull<Image>(this)
+
+        var imageMessage = message.findIsInstance<Image>() ?: CommandExecutor.lastInstanceOrNull<Image>(this)?: kotlin.run {
+            if (message[QuoteReply.Key]!=null){
+                message[QuoteReply.Key]!!.source.originalMessage.findIsInstance<Image>()
+            }
+            else
+                null
+        }
         if (imageMessage == null) {
-            sendMessage(At(sender) + PlainText("图呢图呢图呢？赶紧的赶紧的"))
+            sendMessage(At(sender) + PlainText(config["require_picture_message","图呢图呢图呢？赶紧的赶紧的"]))
             imageMessage = nextMessageOrNull(60 * 1000) {
                 println(it.message.findIsInstance<Image>())
                 it.message.findIsInstance<Image>() != null
             }?.findIsInstance<Image>()
             if (imageMessage == null) {
-                sendMessage("图都不发你用jb的搜图😅😅😅")
+                sendMessage(config["no_message_received","图都不发你用jb的搜图😅😅😅"])
                 return ExecutionResult.LimitCall
             }
         }
-        sendMessage(At(sender) + PlainText("好了！我已经在搜图了！"))
+        sendMessage(At(sender) + PlainText(config["searching","好了！我已经在搜图了！"]))
         //normal
 
         val url =
@@ -75,9 +83,9 @@ object SauceNaoPicSearch : RegexCommand(
         val results = defaultJson.decodeFromString(SauceNaoResponse.serializer(), string)
         buildMessageChain {
             +At(sender)
-            +PlainText("你的搜图结果！！")
+            +PlainText(config["get_result","你的搜图结果！！"])
             if (results.results.maxOf { it.header.similarity } <= 50) {
-                +PlainText("\n我草！这是什么jb相似度😅八成是没搜到")
+                +PlainText(config["low_similarity","\n我草！这是什么jb相似度😅八成是没搜到"])
             }
             +SharedSelenium.render(
                 buildString {
@@ -92,9 +100,9 @@ object SauceNaoPicSearch : RegexCommand(
                             "<p><img src=\"${result.header.thumbnail}\"></p>"
                         ) else if (showThumb)
                             append(
-                                "<p>R18显示被关闭</p>"
+                                "<p>${config["diable_r18_message","R18显示被关闭"]}</p>"
                             ) else append(
-                            "<p>缩略图显示已被关闭</p>"
+                            "<p>${config["diable_thumb_message","缩略图显示已被关闭"]}</p>"
                         )
                         append("</div>")
                     }

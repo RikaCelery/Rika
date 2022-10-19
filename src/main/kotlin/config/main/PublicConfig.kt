@@ -1,5 +1,6 @@
 package org.celery.config.main
 
-import org.celery.config.AutoReloadMap
+import org.celery.Rika
+import org.celery.config.Reloadable
 
-object PublicConfig:AutoReloadMap("publicConfigs")
+object PublicConfig:Reloadable(Rika.configFolderPath.resolve("publicConfigs").toString())

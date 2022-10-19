@@ -7,14 +7,12 @@ import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.descriptor.ExperimentalCommandDescriptors
 import net.mamoe.mirai.console.permission.PermitteeId
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
-import net.mamoe.mirai.console.util.safeCast
 import net.mamoe.mirai.message.data.Message
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.celery.Rika
-import org.celery.command.controller.Call
+import org.celery.command.controller.CommandBasicUsage
 import org.celery.command.controller.CommandUsage
-import org.celery.command.controller.EventCommand
 import org.celery.utils.file.FileTools
 import org.celery.utils.selenium.Selenium
 
@@ -28,16 +26,28 @@ object HelpCommand : CSimpleCommand(
     suspend fun CommandSender.on(name: String? = null) {
         if (subject == null) {
             println(BuiltInCommands.HelpCommand.generateDefaultHelp(this.permitteeId))
-            println(Rika.allRegisteredCommand.map {
-                it.getUsages().map { basicUsage ->
-                    val call = Call(
-                        basicUsage.commandId, user?.id, subject?.id
-                    )
-                    CommandUsage(
-                        basicUsage, true, true
-                    )
-                }
-            }.flatten())
+            println(Rika.allRegisteredCommand2.map {
+                CommandUsage(
+                    CommandBasicUsage(
+                        it.commandId,
+                        listOf(),
+                        it.usage,
+                        it.superUserUsage,
+                        it.example,
+                        it.commandId
+                    ),
+                    it.isEnable(),
+                    true
+                )
+//                it.getUsages().map { basicUsage ->
+//                    val call = Call(
+//                        basicUsage.commandId, user?.id, subject?.id
+//                    )
+//                    CommandUsage(
+//                        basicUsage, true, true
+//                    )
+//                }
+            })
         }
         if (name == null) sendMessage(renderAllToHtml(this.permitteeId).toImageOrPlainText(this))
     }
@@ -163,7 +173,7 @@ object HelpCommand : CSimpleCommand(
         }
     }
 
-    private fun CommandSender.renderAllToHtml(permitteeId: PermitteeId?): List<CommandUsage> {
+    private fun renderAllToHtml(permitteeId: PermitteeId?): List<CommandUsage> {
         return CommandManager.allRegisteredCommands.map {
 //            it.usage.lines().map { line ->
 //                CommandUsage(
@@ -181,23 +191,36 @@ object HelpCommand : CSimpleCommand(
 //            }
             mutableListOf<CommandUsage>()
         }.flatten().toMutableList().apply {
-            addAll(Rika.allRegisteredCommand.map {
-                it.getUsages().map { basicUsage ->
-                    val call = Call(
-                        basicUsage.commandId, user?.id, subject?.id
-                    )
-                    val count = it.getCallSize(call)
-                    val limit = it.getCountLimit(call)
-                    val hasPermission =
-                        it.hasPermission(call)
-                    CommandUsage(
-                        basicUsage,
-                        hasPermission,
-                        (it.safeCast<EventCommand<*>>()?.hasPermission(subject, user) ?: true),
-                        "<br>次数限制$limit, 今日已用:$count"
-                    )
-                }
-            }.flatten())
+            addAll(Rika.allRegisteredCommand2.map {
+//                it.getUsages().map { basicUsage ->
+//                    val call = Call(
+//                        basicUsage.commandId, user?.id, subject?.id
+//                    )
+//                    val count = it.getCallSize(call)
+//                    val limit = it.getCountLimit(call)
+//                    val hasPermission =
+//                        it.hasPermission(call)
+//                    CommandUsage(
+//                        basicUsage,
+//                        hasPermission,
+//                        (it.safeCast<EventCommand<*>>()?.hasPermission(subject, user) ?: true),
+//                        "<br>次数限制$limit, 今日已用:$count"
+//                    )
+//
+//                }
+                CommandUsage(
+                    CommandBasicUsage(
+                        it.commandId,
+                        listOf(),
+                        it.usage,
+                        it.superUserUsage,
+                        it.example,
+                        it.commandId
+                    ),
+                    it.isEnable(),
+                    true
+                )
+            } )
         }.sortedBy { it.basicUsage.commandId }
     }
 

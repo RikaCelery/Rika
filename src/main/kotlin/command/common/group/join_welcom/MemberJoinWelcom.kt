@@ -2,36 +2,61 @@ package org.celery.command.common.group.join_welcom
 
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.MemberJoinEvent
-import org.celery.command.controller.EventCommand
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.getConfigOrNull
+import org.celery.command.controller.abs.Command
 import org.celery.utils.contact.simpleStr
 import org.celery.utils.sendMessage
+import org.celery.utils.strings.placeholder
 
-object MemberJoinWelcom : EventCommand<MemberJoinEvent>(
+@Suppress("unused")
+object MemberJoinWelcom : Command(
     "入群欢迎",
 ) {
+    val defaultInvite: String
+        get() = config["default.邀请", "欢迎{name}({id}),邀请者{invitor_name}({invitor_id})"]
+    val default: String
+        get() = config["default", "欢迎{name}({id})"]
+    var enableList: List<Long>
+        get() = config["enable_group", listOf()]
+        set(value) {
+            config["enable_group"] = value
+        }
 
-    @Matcher(TriggerSubject.Group)
-    fun MemberJoinEvent.handle() = if (this@handle is MemberJoinEvent) EventMatchResult(null) else null
     @Command
-    suspend fun MemberJoinEvent.Active.handleActive(){
-        val message = getConfigOrNull<String>(group.simpleStr)?:return
+    suspend fun MemberJoinEvent.Active.handleActive() {
+        val message = config.getOrDefault(group.simpleStr, default)
         sendMessage(
-            message
-                .replace("{id}",member.id.toString())
-                .replace("{name}",member.nameCardOrNick)
+            message.placeholder(
+                "id" to member.id.toString(),
+                "name" to member.nameCardOrNick,
+            )
         )
     }
+
     @Command
-    suspend fun MemberJoinEvent.Invite.handleInvite(){
-        val message = getConfigOrNull<String>(group.simpleStr + ".邀请") ?: return
-        sendMessage(
-            message
-            .replace("{id}",member.id.toString())
-            .replace("{invitor_id}",invitor.id.toString())
-            .replace("{invitor_name}",member.nameCardOrNick)
-            .replace("{name}",member.nameCardOrNick)
+    suspend fun MemberJoinEvent.Invite.handleInvite() {
+        val message = config.getOrDefault(
+            group.simpleStr + ".邀请", defaultInvite
         )
+        sendMessage(
+            message.placeholder(
+                "id" to member.id.toString(),
+                "invitor_id" to invitor.id.toString(),
+                "invitor_name" to member.nameCardOrNick,
+                "name" to member.nameCardOrNick,
+            )
+        )
+    }
+
+    @Trigger("handleActive")
+    fun MemberJoinEvent.Active.matchQuiet(): EventMatchResult? {
+        if (enableList.contains(groupId)) return EventMatchResult()
+        else return null
+    }
+
+    @Trigger("handleInvite")
+    fun MemberJoinEvent.Invite.matchInvite(): EventMatchResult? {
+        if (enableList.contains(groupId)) return EventMatchResult()
+        else return null
     }
 }

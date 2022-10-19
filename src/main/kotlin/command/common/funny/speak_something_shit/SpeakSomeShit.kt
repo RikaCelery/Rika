@@ -6,44 +6,70 @@ import net.mamoe.mirai.data.UserProfile
 import net.mamoe.mirai.data.UserProfile.Sex.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
+import net.mamoe.mirai.utils.debug
 import org.apache.commons.text.StringEscapeUtils
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
-import org.celery.utils.file.FileTools
+import org.celery.command.controller.abs.Command
 import org.celery.utils.contact.GroupTools
+import org.celery.utils.file.FileTools
 import org.celery.utils.selenium.Selenium
 import org.celery.utils.sendMessage
+import org.openqa.selenium.Dimension
 import java.util.*
 
-object SpeakSomeShit : RegexCommand(
-    "说批话", "^说批话\\s*(.*)$".toRegex(), description = "说点傻逼的"
+object SpeakSomeShit : Command(
+    "说批话", 5, "娱乐","说点傻逼的", "", ""
 ) {
+    private var lastModify = getOrCreateDataFile("批话.txt").lastModified()
+
+    private var caches: List<String> = getTexts()
+
+    private fun getTexts(): List<String> {
+        var sb = StringJoiner("\n")
+        val strings = mutableListOf<String>()
+        getOrCreateDataFile("批话.txt").readLines().forEach { line ->
+            if (line == config["seprator", "##########"]) {
+                strings.add(sb.toString())
+                sb = StringJoiner("\n")
+            } else {
+                sb.add(line)
+            }
+        }
+        strings.add(sb.toString())
+        return strings.filterNot(String::isBlank)
+    }
+
     val list: List<String>
         get() {
-            var sb = StringJoiner("\n")
-            val strings = mutableListOf<String>()
-            getOrCreateDataFile("批话.txt").readLines().forEach { line ->
-                if (line.all { it=='#' }) {
-                    strings.add(sb.toString())
-                    sb = StringJoiner("\n")
-                } else {
-                    sb.add(line)
-                }
+            if (getOrCreateDataFile("批话.txt").lastModified() != lastModify) {
+                lastModify = getOrCreateDataFile("批话.txt").lastModified()
+                caches = getTexts()
             }
-            strings.add(sb.toString())
-            return strings.filterNot(String::isBlank)
+            return caches
         }
 
     private val selenium by lazy { Selenium(false) }
 
-    @Command
+    @Command("^说(?:(\\d*)[条个句])?(.*)批话\\s*(.*)$")
     suspend fun GroupMessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         if (list.isEmpty()) {
             logger.warning("没批话了(批话.txt)")
             sendMessage("没批话了...")
             return ExecutionResult.LimitCall
         }
-        val member: String? = eventMatchResult.getResult().groupValues[1].ifBlank { null }
+//        logger.debug(eventMatchResult.getResult().groupValues.toString())
+        val count = eventMatchResult[1].toIntOrNull()?:1
+        if (count >= 4 || count <= 0) {
+            sendMessage("傻逼")
+            return ExecutionResult.Success
+        }
+        val want = eventMatchResult[2].let { if (it.lastOrNull() == '的') it.dropLast(1) else it }
+        val rawText = if (want.isNotBlank()) list.filter { it.contains(want) }.shuffled().take(count).ifEmpty { null }
+            ?: kotlin.run {
+                logger.debug { "want:$want, but not found, return random text" }
+                list.shuffled().take(count)
+            } else list.shuffled().take(count)
+        val member: String? = eventMatchResult[3].ifBlank { null }
         val target =
             if (member != null && member.startsWith("@")) GroupTools.getUserOrNull(
                 subject,
@@ -51,24 +77,25 @@ object SpeakSomeShit : RegexCommand(
             ) else if (member == null) group.members.random() else null
         val sex = target?.queryProfile()?.sex ?: UserProfile.Sex.FEMALE
         val newValue = target?.nameCardOrNick ?: member!!
-        val text = list.random().replace("%name%", newValue)
-            .replace("%gender%", sex.let {
-                when (it) {
-                    MALE -> "他"
-                    FEMALE -> "她"
-                    UNKNOWN -> "他"
-                }
-            })
-        val X_SIZE = 900
-        val perChar = 40
-        val allPixels = text.length * perChar
-        val y = (allPixels / X_SIZE + 5) * perChar
+        val content = rawText.map {
+            it.replace("%name%", newValue)
+                .replace("%gender%", sex.let {
+                    when (it) {
+                        MALE -> "他"
+                        FEMALE -> "她"
+                        UNKNOWN -> "他"
+                    }
+                })
+        }
         val temp = FileTools.creatTempFile("html")
-        val replace = StringEscapeUtils.escapeHtml4(text).replace("\n", "<br>")
         temp.writeText(
             """
                 <body>
-                    <div>$replace</div>
+                    ${
+                content.joinToString("\n") {
+                    "<div>" + StringEscapeUtils.escapeHtml4(it).replace("\n", "<br>") + "</div>"
+                }
+            }
                 </body>
                 <style>
                     body{
@@ -89,7 +116,7 @@ object SpeakSomeShit : RegexCommand(
         )
         val screenShot = selenium.screenShot(
             """file:///$temp""",
-            dimension = null
+            dimension = Dimension(1200, 0)
         )
         screenShot.toExternalResource().use {
             group.uploadImage(it)

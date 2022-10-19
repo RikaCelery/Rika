@@ -4,14 +4,14 @@ import events.ExecutionResult
 import net.mamoe.mirai.event.events.MessageEvent
 import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.sendMessage
 import org.celery.utils.time.TimeConsts
 
-object IKunTimeTransformer:RegexCommand(
-    "坤坤换算", "^(\\d+)(s|秒|m|min|分钟|h|小时|d|天|mon|月|year|年)?是(?:多少|几)[坤鲲]".toRegex()
+object IKunTimeTransformer:Command(
+    "坤坤换算",
 ) {
-    @Command
+    @Command("^(\\d+)(s|秒|m|min|分钟|h|小时|d|天|mon|月|year|年)?是(?:多少|几)[坤鲲]")
     suspend fun MessageEvent.handle(eventMatchResult: EventMatchResult): ExecutionResult {
         val time = eventMatchResult[1]+eventMatchResult[2].ifBlank { "s" }
         //解析时间

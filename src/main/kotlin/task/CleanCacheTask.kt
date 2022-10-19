@@ -2,7 +2,8 @@ package org.celery.task
 
 import command.common.group.funny.marry_member.data.MarryMemberData
 import net.mamoe.mirai.utils.MiraiLogger
-import org.celery.command.controller.Limitable
+import org.celery.config.main.function.CountRecords
+import org.celery.data.TempData
 import org.celery.utils.task_controller.AbstractBotTask
 import org.celery.utils.time.TimeConsts
 import org.celery.utils.time.TimeUtils
@@ -19,6 +20,8 @@ class CleanCacheTask : AbstractBotTask(hours = 0, minutes = 0) {
         logger.debug("clean:MarryMemberData.marriedMap")
         MarryMemberData.newMap.clear()
         logger.debug("clean:Command.callHistory")
-        Limitable.Companion.CallHistory.clear()
+        CountRecords.clear()
+        logger.debug("clean:TempData")
+        TempData.clear()
     }
 }

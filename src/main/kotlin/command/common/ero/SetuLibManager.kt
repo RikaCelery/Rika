@@ -6,14 +6,14 @@ import org.celery.command.common.ero.impl.SetuLibLocal
 import org.celery.command.common.ero.impl.SetuLibWeb
 import org.celery.command.common.ero.impl.SetuPixivLazyLib
 import org.celery.config.main.Keys
-import org.celery.config.main.PublicConfig
 import java.io.File
+import kotlin.contracts.ExperimentalContracts
 
 object SetuLibManager : Collection<SetuLib> {
     private val setuLibs: MutableList<SetuLib> = mutableListOf()
     val logger = MiraiLogger.Factory.create(this::class)
     private val defaultWeb = mapOf(
-        "alias" to "别名1,别名2",
+        "alias" to "别名1|别名2",
         "apiUrl" to "https://",
         "responseType" to "image 或 json",
         "picKey" to "key",
@@ -21,19 +21,19 @@ object SetuLibManager : Collection<SetuLib> {
         "save" to "false"
     )
     private val defaultLocal = mapOf(
-        "alias" to "别名1,别名2",
-        "libPath" to "C:/image 或 image",
+        "alias" to "别名1|别名2",
+        "libPath" to "C:/image 或 image(从`保存路径`开始计算)",
         "libName" to "web-1"
     )
-    val saveFolder = File(PublicConfig[Keys.MAX_COUNT_DEFAULT, Rika.dataFolderPath.toString()])
+    val saveFolder = File(EroConfig[Keys.ERO_SAVE_FOLDER, Rika.dataFolderPath.resolve("ero").toString()])
     fun reload() {
         setuLibs.clear()
         setuLibs.add(SetuPixivLazyLib)
-        PublicConfig["WebSetuAPI", mutableListOf(defaultWeb)].forEach { map ->
+        EroConfig["WebSetuAPI", mutableListOf(defaultWeb)].forEach { map ->
             try {
                 setuLibs.add(
                     SetuLibWeb(
-                        alias = map["alias"]!!.split(","),
+                        alias = map["alias"]!!.split("|"),
                         apiUrl = map["apiUrl"]!!,
                         responseType = map["responseType"],
                         picKey = map["picKey"],
@@ -45,7 +45,7 @@ object SetuLibManager : Collection<SetuLib> {
                 logger.error("网络涩图库配置错误${map.toMap()}")
             }
         }
-        PublicConfig["LocalSetu", mutableListOf(defaultLocal)].forEach {
+        EroConfig["LocalSetu", mutableListOf(defaultLocal)].forEach {
             val map = it
             try {
                 setuLibs.add(
@@ -64,6 +64,14 @@ object SetuLibManager : Collection<SetuLib> {
         }
     }
 
+    @OptIn(ExperimentalContracts::class)
+    fun getLib(alias:String): SetuLib? {
+        return filter {
+            println(it.alias)
+            println(alias.trim())
+            it.alias.contains(alias.trim())
+        }.randomOrNull()
+    }
 
     override val size: Int
         get() = setuLibs.size

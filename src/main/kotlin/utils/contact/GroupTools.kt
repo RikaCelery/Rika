@@ -34,7 +34,19 @@ object GroupTools {
             }
         }
     }
-
+    fun getMemberOrNull(group: Group,msg: String): Member? {
+        Rika.logger.debug(msg)
+        val noneAt = msg.replace("@", "")
+        if (noneAt.isBlank()) {
+            return null
+        }
+        return if (noneAt.contains(Regex("""\D"""))) {
+            group.findMemberOrNull(noneAt)
+        } else {
+            val number = noneAt.toLong()
+            group[number]
+        }
+    }
     /**
      * 从一个群中模糊搜索昵称是[nameCard]的群员
      * @param nameCard 群员昵称

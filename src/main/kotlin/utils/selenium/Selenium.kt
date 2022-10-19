@@ -3,12 +3,15 @@ package org.celery.utils.selenium
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.utils.MiraiLogger
 import net.mamoe.mirai.utils.warning
+import org.celery.Rika
 import org.celery.Rika.seleniums
+import org.celery.config.main.PublicConfig
 import org.celery.utils.file.FileTools
 import org.openqa.selenium.*
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.interactions.Actions
+import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.io.File
@@ -17,18 +20,33 @@ import java.time.Duration
 open class Selenium(val debug: Boolean = true) {
     private val logger = MiraiLogger.Factory.create(this::class)
     private var used = false
-    private val driver by lazy {
-        used = true
+    private fun newDriver(): RemoteWebDriver {
         val options = ChromeOptions()
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL)
         options.setHeadless(!debug)
+
         val time = System.currentTimeMillis()
+//        EdgeDriver()
+//        FirefoxDriver()
+//        ChromiumDriver.builder().build()
         val driver1 = ChromeDriver(options)
         driver1.manage().window().size = Dimension(1000, 800)
         driver1.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(20))
         driver1.manage().timeouts().implicitlyWait(Duration.ofMillis(5000))
         logger.info("初始化Selenium完成, 耗时: ${System.currentTimeMillis() - time}ms")
-        driver1
+        return driver1 }
+    private var cacheDriver:RemoteWebDriver?=null
+    val driver:RemoteWebDriver
+    get() {
+        return cacheDriver?: run {
+            try {
+                cacheDriver = newDriver()
+                used = true
+                cacheDriver!!
+            } catch (e: Exception) {
+                throw Exception("selenium 不可用",e)
+            }
+        }
     }
     val actions by lazy {
         Actions(driver)
@@ -62,14 +80,12 @@ open class Selenium(val debug: Boolean = true) {
             }
             logger.info("actionAfterGet耗时: ${System.currentTimeMillis() - time}ms")
             time = System.currentTimeMillis()
-            driver.executeScript("var q=document.documentElement.scrollTop=100000")
+            driver.executeScript("document.documentElement.scrollTop=100000")
             Thread.sleep(20)
-            driver.executeScript("var q=document.documentElement.scrollTop=0")
+            driver.executeScript("document.documentElement.scrollTop=0")
             logger.info("滚动耗时: ${System.currentTimeMillis() - time}ms ")
             time = System.currentTimeMillis()
-            WebDriverWait(driver, Duration.ofSeconds(30)).until {
-                waitUntil(it)
-            }
+            WebDriverWait(driver, Duration.ofSeconds(30)).until { waitUntil(it) }
             logger.info("WebDriver等待耗时: ${System.currentTimeMillis() - time}ms")
         } catch (e: TimeoutException) {
             logger.warning("TimeoutException: ${e.message}")
@@ -106,14 +122,14 @@ open class Selenium(val debug: Boolean = true) {
             dimension?.height?.let { if (it == 0) (height+30) else it } ?: (height+30)
         )
 
-        logger.info("reSize耗时: ${System.currentTimeMillis() - time}ms")
-        time = System.currentTimeMillis()
         if (element != null) {
             val js = driver as JavascriptExecutor
             val yS = element.location.y
             val xS = element.location.x
             js.executeScript("""scrollTo($xS,$yS)""")
         }
+        logger.info("reSize耗时: ${System.currentTimeMillis() - time}ms")
+        time = System.currentTimeMillis()
 //        val pos = element.location
 //        val width = element.size.getWidth()
 //        val height = element.size.getHeight()
@@ -206,9 +222,10 @@ open class Selenium(val debug: Boolean = true) {
     }
 
     init {
-        val WORKING_DIR = File("./").canonicalPath
-        logger.info("当前工作目录: $WORKING_DIR")
-        System.setProperty("webdriver.chrome.driver", "$WORKING_DIR\\chromedriver.exe")
+        val driverPath = Rika.dataFolder.resolve("chromedriver.exe").toString()
+        val s = PublicConfig["webdriver.chrome.driver", driverPath]
+        logger.info("webdriver.chrome.driver: $s")
+        System.setProperty("webdriver.chrome.driver", s)
         seleniums.add(this)
 
     }

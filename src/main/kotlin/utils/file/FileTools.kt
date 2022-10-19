@@ -5,41 +5,43 @@ import net.mamoe.mirai.utils.MiraiLogger
 import org.celery.Rika
 import org.celery.utils.commandline.runCommand
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 @Suppress("unused")
 object FileTools {
-    private val logger = MiraiLogger.Factory.create(FileTools::class)
-    private fun copyFile(source: File, target: File, overWrite: Boolean = false) {
+    private val logger = Rika.logger
+
+    @JvmStatic
+    fun copyFile(source: File, target: File, overWrite: Boolean = false) {
         if (overWrite || !target.exists()) {
-            val inputStream = FileInputStream(source)
-            val outputStream = FileOutputStream(target)
-            val buffer = ByteArray(1024)
-            var length = inputStream.read(buffer)
-            while (length > 0) {
-                outputStream.write(buffer, 0, length)
-                length = inputStream.read(buffer)
-            }
-            inputStream.close()
-            outputStream.close()
+            Files.copy(
+                source.toPath(),
+                target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.COPY_ATTRIBUTES,
+            )
         } else {
             logger.info("File $target already exists")
         }
     }
 
+    @JvmStatic
     fun cutFile(source: File, target: File, overWrite: Boolean = false) {
         copyFile(source, target, overWrite)
-        source.delete()
+        if(!source.delete())
+            logger.warning("$source 删除失败")
     }
 
     /**
      * 返回一个随机文件(需要自行新建)
      */
+    @Synchronized
+    @JvmStatic
     fun getTempFile(ext: String = ""): File {
         var file = File("${Rika.dataFolderPath}/temp/${System.currentTimeMillis()}.$ext")
         file.parentFile.apply { mkdirs() }
@@ -54,6 +56,8 @@ object FileTools {
     /**
      * 新建并返回一个随机文件
      */
+    @Synchronized
+    @JvmStatic
     fun creatTempFile(ext: String = ""): File {
         var file = File("${Rika.dataFolderPath}/temp/${System.currentTimeMillis()}.$ext")
         file.parentFile.apply { mkdirs() }
@@ -65,6 +69,7 @@ object FileTools {
         return file.apply { createNewFile() }
     }
 
+    @JvmStatic
     suspend fun getArchive(
         inputFiles: List<File>, passWord: String? = null, overWrite: Boolean = false
     ) = getArchive(creatTempFile(), inputFiles, passWord, overWrite)
@@ -72,11 +77,13 @@ object FileTools {
     /**
      * 获取本地文件的大小
      */
+    @JvmStatic
     fun getFileContentLength(path: String?): Long {
         val file = File(path)
         return if (file.exists() && file.isFile) file.length() else 0
     }
 
+    @JvmStatic
     suspend fun getArchive(
         outPutFile: File, inputFiles: List<File>, passWord: String? = null, overWrite: Boolean = false
     ): File {
@@ -256,6 +263,7 @@ object FileTools {
         return String.format("%s %s", `val`, unit)
     }
 
+    @JvmStatic
     fun byteCountToDisplaySize(size: Long): String {
         return byteCountToDisplaySize(BigInteger.valueOf(size))
     }
