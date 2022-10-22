@@ -17,6 +17,8 @@ class EventMatchResult(
             list.add(last.value)
             last = last.next()
         }
+        if (list.isEmpty())
+            error("no match here")
         return list
     }
 
@@ -25,7 +27,7 @@ class EventMatchResult(
         return "EventMatchResult(result=$matchResult, index=$index, data=$data)"
     }
     fun getResult(): MatchResult {
-        return matchResult ?: error("no match result there, it's not regex match command")
+        return matchResult ?: error("no match result here, it's not regex match command")
     }
     operator fun get(index: Int): String {
         return getResult().groupValues[index]
