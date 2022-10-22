@@ -1,6 +1,8 @@
 package command.common.funny.baidu_pic_search
 
 import events.ExecutionResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.NormalMember
@@ -75,19 +77,21 @@ object BaiduPicSearchCommand : Command(
             return ExecutionResult.LimitCall
         }
         if (!canSearch(target) && sender.isSuperUser().not()) {
-            if (BaiduPicSearchCommand.warnings[sender.id] == 1) {
+            if (warnings[sender.id] == 1) {
                 //                    sender?.id?.let { BlackList.addUser(senderId = it, 3 * TimeUtil.DAY * 1000L) }
             } else {
-                if (BaiduPicSearchCommand.warnings[sender?.id] == 0) {
-                    BaiduPicSearchCommand.warnings[sender?.id] = 1
+                if (warnings[sender.id] == 0) {
+                    warnings[sender.id] = 1
                 } else {
-                    BaiduPicSearchCommand.warnings[sender?.id] = 0
+                    warnings[sender.id] = 0
                 }
-                sendMessage("该关键词禁止搜索,警告${BaiduPicSearchCommand.warnings[sender?.id]}次")
+                sendMessage("该关键词禁止搜索,警告${warnings[sender.id]}次")
             }
             return ExecutionResult.LimitCall
         }
-        val param = URLEncoder.encode(target, "utf8")
+        val param = withContext(Dispatchers.IO) {
+            URLEncoder.encode(target, "utf8")
+        }
         BaiduPicSearchCommand.logger.info("搜索图片:$target,$param")
         if (page == "") {
             val url =

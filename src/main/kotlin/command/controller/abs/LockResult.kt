@@ -4,20 +4,20 @@ import org.celery.Rika
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-
+@Suppress("unused")
 class LockResult<out T>(val value: Any?) {
 
     /**
      * Returns `true` if this instance represents a successful outcome.
      * In this case [isFailure] returns `false`.
      */
-    val isSuccess: Boolean get() = value !is LockResult.Failure && value !is Locked
+    val isSuccess: Boolean get() = value !is Failure && value !is Locked
 
     /**
      * Returns `true` if this instance represents a failed outcome.
      * In this case [isSuccess] returns `false`.
      */
-    val isFailure: Boolean get() = value is LockResult.Failure
+    val isFailure: Boolean get() = value is Failure
 
     val isLocked: Boolean get() = value is Locked
 
@@ -29,7 +29,7 @@ class LockResult<out T>(val value: Any?) {
      * `fold(onSuccess = { it }, onFailure = { null })` (see [fold]).
      */
 
-    public inline fun getOrNull(): T? =
+    inline fun getOrNull(): T? =
         when {
             isFailure -> null
             else -> value as T
@@ -41,9 +41,9 @@ class LockResult<out T>(val value: Any?) {
      *
      * This function is a shorthand for `fold(onSuccess = { null }, onFailure = { it })` (see [fold]).
      */
-    public fun exceptionOrNull(): Throwable? =
+    fun exceptionOrNull(): Throwable? =
         when (value) {
-            is LockResult.Failure -> value.exception
+            is Failure -> value.exception
             else -> null
         }
 
@@ -52,9 +52,9 @@ class LockResult<out T>(val value: Any?) {
      * where `v` is a string representation of the value or a string `Failure(x)` if
      * it is [failure][isFailure] where `x` is a string representation of the exception.
      */
-    public override fun toString(): String =
+    override fun toString(): String =
         when (value) {
-            is LockResult.Failure -> value.toString() // "Failure($exception)"
+            is Failure -> value.toString() // "Failure($exception)"
             else -> "Success($value)"
         }
 
@@ -76,7 +76,7 @@ class LockResult<out T>(val value: Any?) {
     internal class Failure(
         val exception: Throwable
     ) {
-        override fun equals(other: Any?): Boolean = other is LockResult.Failure && exception == other.exception
+        override fun equals(other: Any?): Boolean = other is Failure && exception == other.exception
         override fun hashCode(): Int = exception.hashCode()
         override fun toString(): String = "Failure($exception)"
     }
@@ -84,7 +84,7 @@ class LockResult<out T>(val value: Any?) {
     internal class Locked(
         val key: Pair<Pair<Long, Long>, String>
     ) {
-        override fun equals(other: Any?): Boolean = other is LockResult.Locked && key == other.key
+        override fun equals(other: Any?): Boolean = other is Locked && key == other.key
         override fun hashCode(): Int = key.hashCode()
         override fun toString(): String = "Locked($key)"
     }
@@ -95,7 +95,7 @@ class LockResult<out T>(val value: Any?) {
  * inlined bytecode for [getOrThrow] and makes sure that in the future we can
  * add some exception-augmenting logic here (if needed).
  */
-public fun LockResult<*>.throwOnFailure() {
+fun LockResult<*>.throwOnFailure() {
     if (value is LockResult.Failure) throw value.exception
 }
 
@@ -121,7 +121,7 @@ inline fun <T> LockResult<T>.getOrThrow(): T {
  */
 
 @OptIn(ExperimentalContracts::class)
-public inline fun <R, T : R> LockResult<T>.getOrElse(onFailure: (exception: Throwable) -> R): R {
+inline fun <R, T : R> LockResult<T>.getOrElse(onFailure: (exception: Throwable) -> R): R {
     contract {
         callsInPlace(onFailure, InvocationKind.AT_MOST_ONCE)
     }
@@ -138,7 +138,7 @@ public inline fun <R, T : R> LockResult<T>.getOrElse(onFailure: (exception: Thro
  * This function is a shorthand for `getOrElse { defaultValue }` (see [getOrElse]).
  */
 
-public inline fun <R, T : R> LockResult<T>.getOrDefault(defaultValue: R): R {
+inline fun <R, T : R> LockResult<T>.getOrDefault(defaultValue: R): R {
     if (isFailure) return defaultValue
     return value as T
 }
@@ -151,9 +151,9 @@ public inline fun <R, T : R> LockResult<T>.getOrDefault(defaultValue: R): R {
  */
 
 @OptIn(ExperimentalContracts::class)
-public inline fun <R, T> LockResult<T>.fold(
+inline fun <R, T> LockResult<T>.fold(
     onSuccess: (value: T) -> R,
-    onFailure: (exception: Throwable) -> R
+    onFailure: (exception: Throwable) -> R,
 ): R {
     contract {
         callsInPlace(onSuccess, InvocationKind.AT_MOST_ONCE)
@@ -177,7 +177,7 @@ public inline fun <R, T> LockResult<T>.fold(
  */
 
 @OptIn(ExperimentalContracts::class)
-public inline fun <R, T> LockResult<T>.map(transform: (value: T) -> R): LockResult<R> {
+inline fun <R, T> LockResult<T>.map(transform: (value: T) -> R): LockResult<R> {
     contract {
         callsInPlace(transform, InvocationKind.AT_MOST_ONCE)
     }
@@ -196,7 +196,7 @@ public inline fun <R, T> LockResult<T>.map(transform: (value: T) -> R): LockResu
  * See [map] for an alternative that rethrows exceptions from `transform` function.
  */
 
-public inline fun <R, T> LockResult<T>.mapCatching(transform: (value: T) -> R): LockResult<R> {
+inline fun <R, T> LockResult<T>.mapCatching(transform: (value: T) -> R): LockResult<R> {
     return when {
         isSuccess -> lockCatching { transform(value as T) }
         else -> LockResult(value)
@@ -213,7 +213,7 @@ public inline fun <R, T> LockResult<T>.mapCatching(transform: (value: T) -> R): 
  */
 
 @OptIn(ExperimentalContracts::class)
-public inline fun <R, T : R> LockResult<T>.recover(transform: (exception: Throwable) -> R): LockResult<R> {
+inline fun <R, T : R> LockResult<T>.recover(transform: (exception: Throwable) -> R): LockResult<R> {
     contract {
         callsInPlace(transform, InvocationKind.AT_MOST_ONCE)
     }
@@ -232,7 +232,7 @@ public inline fun <R, T : R> LockResult<T>.recover(transform: (exception: Throwa
  * See [recover] for an alternative that rethrows exceptions.
  */
 
-public inline fun <R, T : R> LockResult<T>.recoverCatching(transform: (exception: Throwable) -> R): LockResult<R> {
+inline fun <R, T : R> LockResult<T>.recoverCatching(transform: (exception: Throwable) -> R): LockResult<R> {
     return when (val exception = exceptionOrNull()) {
         null -> this
         else -> lockCatching { transform(exception) }
@@ -244,14 +244,14 @@ public inline fun <R, T : R> LockResult<T>.recoverCatching(transform: (exception
  * Returns the original `LockResult` unchanged.
  */
 
-public inline fun <T> LockResult<T>.onFailure(action: (exception: Throwable) -> Unit): LockResult<T> {
+inline fun <T> LockResult<T>.onFailure(action: (exception: Throwable) -> Unit): LockResult<T> {
 
     exceptionOrNull()?.let { action(it) }
     return this
 }
 
 
-public inline fun <T> LockResult<T>.onLocked(action: (LockResult<T>) -> Unit): LockResult<T> {
+inline fun <T> LockResult<T>.onLocked(action: (LockResult<T>) -> Unit): LockResult<T> {
     if (isLocked)
         action(this)
     return this
@@ -263,13 +263,13 @@ public inline fun <T> LockResult<T>.onLocked(action: (LockResult<T>) -> Unit): L
  */
 
 
-public inline fun <T> LockResult<T>.onSuccess(action: (value: T) -> Unit): LockResult<T> {
+inline fun <T> LockResult<T>.onSuccess(action: (value: T) -> Unit): LockResult<T> {
 
     if (isSuccess) action(value as T)
     return this
 }
 
-public inline fun <R> lockCatching(block: () -> R): LockResult<R> {
+inline fun <R> lockCatching(block: () -> R): LockResult<R> {
     return try {
         LockResult.success(block())
     } catch (e: Throwable) {

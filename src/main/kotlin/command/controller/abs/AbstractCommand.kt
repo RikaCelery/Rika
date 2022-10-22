@@ -36,6 +36,7 @@ import kotlin.reflect.full.*
 /**
  *
  */
+@Suppress("unused")
 abstract class AbstractCommand(
     override val commandId: String,
     /**
@@ -175,7 +176,7 @@ abstract class AbstractCommand(
         return false
     }
 
-    protected fun Event.checkTargetPermission(permission: AbstractCommand.RequirePermission): Boolean {
+    protected fun Event.checkTargetPermission(permission: RequirePermission): Boolean {
         println("this::class.qualifiedName = ${this::class.qualifiedName}")
         return when (permission) {
             OPERATOR -> {
@@ -223,7 +224,7 @@ abstract class AbstractCommand(
 
 }
 
-
+@Suppress("unused")
 open class Command(
     override val commandId: String,
     priority: Int = 5,
@@ -251,7 +252,7 @@ open class Command(
 
 //            println("kFunction = ${kFunction.name}")
             var matches: EventMatchResult? = null
-            val trigger = (triggers.firstOrNull() { it.findAnnotation<Trigger>()?.targetFunctionName == kFunction.name }
+            val trigger = (triggers.firstOrNull { it.findAnnotation<Trigger>()?.targetFunctionName == kFunction.name }
                 ?: triggers.singleOrNull())?.run {
                 val kParameter = extensionReceiverParameter ?: parameters[1]
                 if ((kParameter.type.classifier as KClass<*>).isSuperclassOf(this@getTriggeredFunctions::class)) this
@@ -323,7 +324,7 @@ open class Command(
 
     @Runner
     suspend fun runC(event: Event): Pair<ExecutionResult, Int> {
-        var coin = 0
+        var coin: Int
         val message = if (event is MessageEvent) event.message.content else ""
         for ((matchResult, triggeredFunction, _annotation) in event.getTriggeredFunctions(message)) {
             coin = _annotation.coin

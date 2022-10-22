@@ -31,7 +31,10 @@ object CallControl:Command(
         when(this){
             is GroupMessageEvent->{
                 if (newLimit>command.getLimit(subject.id,user!!.id,NEWLimitable.LimitMode.GLOBAL) && sender.isSuperUser().not()){
-                    return ExecutionResult.Failed(exception = IllegalStateException("call limit can not greater than ${command.getLimit(subject.id,user!!.id,NEWLimitable.LimitMode.GLOBAL)}"))
+                    return ExecutionResult.Failed(exception = IllegalStateException("call limit can not greater than ${
+                        command.getLimit(subject.id,
+                            user.id, NEWLimitable.LimitMode.GLOBAL)
+                    }"))
                 }
                 if (sender.isOperator()||sender.isSuperUser()){
                     command.setLimit(subject.id, user.id,newLimit,command.getLimitMode(subject.id,user.id))

@@ -105,7 +105,5 @@ object PickMoonCake : Command("月饼", usage = "拿月饼<月饼名字>\n查月
         val name: String,
         val emoji: String,
         val count: Int,
-    ) {
-
-    }
+    )
 }

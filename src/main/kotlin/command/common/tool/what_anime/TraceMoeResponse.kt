@@ -77,9 +77,8 @@ data class TraceMoeResponse(
                 @SerialName("chinese")
                 var chinese: String = "", //
                 @SerialName("romaji")
-                var romaji: String = "" // Nekopara OVA
-            ){
-            }
+                var romaji: String = "", // Nekopara OVA
+            )
         }
     }
 }
