@@ -31,6 +31,11 @@ object CommandExecutor : SimpleListenerHost() {
 
     @EventHandler
     suspend fun Event.listen() {
+        if (this is MessageEvent){
+            lastMessages.add(this)
+            if (lastMessages.size>20)
+                lastMessages.poll()
+        }
         for (command in commands2.sortedByDescending { it.priority }) {
             try {
                 if (!command.triggered(this)) {
@@ -174,7 +179,7 @@ object CommandExecutor : SimpleListenerHost() {
 
 
     override fun handleException(context: CoroutineContext, exception: Throwable) {
-        exception.printStackTrace()
+        logger.error(exception)
     }
 
 
