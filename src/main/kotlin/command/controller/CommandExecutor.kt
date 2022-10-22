@@ -29,12 +29,6 @@ object CommandExecutor : SimpleListenerHost() {
     val lastMessages = ConcurrentLinkedDeque<MessageEvent>()
 
 
-
-    /**
-     * 从消息/事件中识别指令
-     *
-     * 原事件会被包装到CommandExecutionEvent中
-     */
     @EventHandler
     suspend fun Event.listen() {
         for (command in commands2.sortedByDescending { it.priority }) {
