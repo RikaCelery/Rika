@@ -79,7 +79,7 @@ object HttpUtils {
     private var outputStream = ByteArrayOutputStream()
     private fun getClient() = if (ProxyConfigs.httpClientEnable) clientProxy else clientNoProxy
 
-    fun downloadToFile(url: String, ext: String? = null, file: File? = null): File {
+    fun downloadToFile(url: String, file: File? = null, ext: String? = null): File {
         val file1 = file ?: FileTools.creatTempFile()
         val request = Request.Builder()
             .url(url)
@@ -102,7 +102,6 @@ object HttpUtils {
             override fun onResponse(call: Call, response: Response) {
                 val timer = Timer()
                 try {
-
                     response.body?.byteStream()?.use {
                         file1.outputStream().use { outputStream ->
 
@@ -162,8 +161,7 @@ object HttpUtils {
             }
         })
         latch.await()
-        return if (fileName != null) {
-
+        return if (file == null && fileName != null) {
             if (ext != null) {
                 Files.move(
                     file1.toPath(),
@@ -231,16 +229,15 @@ object HttpUtils {
                 println("cached $url")
             }
             return content
-        }
-        else if (response.headers["Content-Encoding"] == "br") {
+        } else if (response.headers["Content-Encoding"] == "br") {
             logger.info("Content-Encoding: br")
             // 解压数据
-            val reader = BufferedReader(InputStreamReader(BrotliInputStream(response.body!!.byteStream()),"utf8"))
+            val reader = BufferedReader(InputStreamReader(BrotliInputStream(response.body!!.byteStream()), "utf8"))
 
             val content = buildString {
                 var line = ""
-                while (reader.readLine()?.also { line=it }!=null){
-                   append(line)
+                while (reader.readLine()?.also { line = it } != null) {
+                    append(line)
                 }
             }
             logger.debug("br解压结果：size = ${content.length}")
@@ -326,13 +323,13 @@ object HttpUtils {
     }
 }
 
-private fun InputStream.tryread(buffer: ByteArray,depth:Int = 0): Int {
+private fun InputStream.tryread(buffer: ByteArray, depth: Int = 0): Int {
     return try {
         read(buffer)
-    } catch (e:Exception) {
-        if (depth>20)
+    } catch (e: Exception) {
+        if (depth > 20)
             throw e
-        tryread(buffer,depth+1)
+        tryread(buffer, depth + 1)
     }
 }
 

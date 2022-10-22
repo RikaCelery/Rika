@@ -51,7 +51,7 @@ object BegForCoins : Command(
                     append(config["reply_at_0", "爬爬爬😡"])
                 }
             }
-            Coins[sender]+=coins
+            Coins.set(sender, Coins[sender].plus(coins))
             append("你现在有${Coins[sender]}个原石")
         })
     }

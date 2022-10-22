@@ -8,14 +8,12 @@ import command.common.funny.baidu_pic_search.BaiduPicSearchData
 import command.common.funny.love_generate_electricity.LoveGenerateElectricity
 import command.common.funny.love_generate_electricity.LoveGenerateElectricityAdd
 import command.common.funny.speak_something_shit.SpeakSomeShitAdd
+import command.common.funny.temp_pick_moon_cake.PickMoonCake
 import command.common.game.genshin.GenshinResourceCommand
-import command.common.game.genshin.grass_cutter.GrassCutterStatCommand
 import command.common.group.exit_notify.MemberExitNotify
 import command.common.group.exit_notify.MemberExitNotifyControl
 import command.common.group.funny.TalkWithMe
 import command.common.group.funny.banme.Banme
-import command.common.group.funny.marry_member.MarryMemberCommand
-import command.common.group.funny.marry_member.MarryMemberCommandBeXioaSan
 import command.common.group.funny.marry_member.data.MarryMemberData
 import command.common.group.manage.AdvanceMute
 import command.common.group.manage.KickMember
@@ -26,7 +24,6 @@ import config.pixiv.PixivConfigs
 import config.pixiv.config.ConfigData
 import data.Limits
 import kotlinx.coroutines.runBlocking
-import net.mamoe.mirai.console.command.Command
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
@@ -36,6 +33,7 @@ import net.mamoe.mirai.event.registerTo
 import net.mamoe.mirai.utils.info
 import org.celery.Rika.allRegisteredCommand2
 import org.celery.command.builtin.*
+import org.celery.command.common.Music
 import org.celery.command.common.ero.commands.RandomSetu
 import org.celery.command.common.ero.commands.SpecificSetu
 import org.celery.command.common.funny.*
@@ -44,19 +42,13 @@ import org.celery.command.common.funny.emoji_mix.DeleteMix
 import org.celery.command.common.funny.emoji_mix.EmojiMix
 import org.celery.command.common.funny.speak_something_shit.SpeakSomeShit
 import org.celery.command.common.group.funny.WorldCloud
-import org.celery.command.common.group.funny.marry_member.MarryMemberCommandDivoce
 import org.celery.command.common.group.join_welcom.MemberJoinWelcom
 import org.celery.command.common.group.join_welcom.MemberJoinWelcomControl
-import org.celery.command.common.group.manage.RequireHeader
-import org.celery.command.common.group.manage.RequireHeaderConfirm
 import org.celery.command.common.group.mute_notify.BotMuteNotify
 import org.celery.command.common.group.mute_notify.MemberMuteNotify
 import org.celery.command.common.nbnhhsh.Nbnhhsh
-import org.celery.command.common.temp_pick_moon_cake.PickMoonCake
-import org.celery.command.controller.CCommand
+import org.celery.command.common.nihongo.Nihongo
 import org.celery.command.controller.CommandExecutor
-import org.celery.command.controller.EventCommand
-import org.celery.command.controller.Limitable
 import org.celery.command.controller.abs.TestCommand
 import org.celery.config.Reloadable
 import org.celery.config.main.MainConfig
@@ -85,7 +77,6 @@ object Rika : KotlinPlugin(
 ) {
     val seleniums = mutableListOf<Selenium>()
     const val DEBUG_MODE: Boolean = true
-    val allRegisteredCommand: HashSet<CCommand> = hashSetOf()
     val allRegisteredCommand2: HashSet<org.celery.command.controller.abs.Command> = hashSetOf()
     override fun PluginComponentStorage.onLoad() {
         logger.info("********************************************************")
@@ -114,8 +105,8 @@ object Rika : KotlinPlugin(
         MessageSaver.registerTo(GlobalEventChannel)
         CommandExecutor.registerTo(GlobalEventChannel)
         //builtin commands
-        PanicCommand.reg()
-        HelpCommand.reg()
+        PanicCommand.register()
+        HelpCommand.register()
         ConsoleFunctionCallControlEnable.register()
         ConsoleFunctionCallControlDisable.register()
         FunctionCallControl.reg()
@@ -125,10 +116,6 @@ object Rika : KotlinPlugin(
         CallControl.reg()
         MyCoins.reg()
         //common commands
-        MarryMemberCommand.reg()
-        MarryMemberCommandBeXioaSan.reg()
-        MarryMemberCommandDivoce.reg()
-        GrassCutterStatCommand.reg()
         Banme.reg()
         WorldCloud.reg()
         KickMember.reg()
@@ -147,15 +134,12 @@ object Rika : KotlinPlugin(
         IKunTimeTransformer.reg()
         MyLuck.reg()
         BegForCoins.reg()
-        SearchGeng.reg()
         Github.reg()
         TestCommand.reg()
         NetEase.reg()
         PickMoonCake.reg()
         SauceNaoPicSearch.reg()
         WhatAnime.reg()
-        RequireHeader.reg()
-        RequireHeaderConfirm.reg()
         MemberExitNotifyControl.reg()
         MemberExitNotify.reg()
         MemberExitNotifyControl.reg()
@@ -168,6 +152,8 @@ object Rika : KotlinPlugin(
         SpecificSetu.reg()
         MemberMuteNotify.reg()
         BotMuteNotify.reg()
+        Nihongo.reg()
+        Music.reg()
         QRCodeDector().registerTo(GlobalEventChannel)
         // add task
         BotTaskController.add(CleanCacheTask())
@@ -181,7 +167,6 @@ object Rika : KotlinPlugin(
         }
         //check
         mainCheck()
-        allRegisteredCommand.forEach(CCommand::perCheck)
         logger.info { "Rika loaded" }
 //        logger.info { "********************************************************" }
 //        logger.warning { "******** TEST START ********" }
@@ -317,20 +302,6 @@ object Rika : KotlinPlugin(
     }
 }
 
-private fun CCommand.reg() {
-    when (this) {
-        is Command -> {
-            register(true)
-            Rika.allRegisteredCommand.add(this)
-            Limitable.allRegistered.add(this)
-        }
-        is EventCommand<*> -> {
-            CommandExecutor.add(this)
-            Rika.allRegisteredCommand.add(this)
-            Limitable.allRegistered.add(this)
-        }
-    }
-}
 private fun org.celery.command.controller.abs.Command.reg() {
     CommandExecutor.add(this)
     allRegisteredCommand2.add(this)

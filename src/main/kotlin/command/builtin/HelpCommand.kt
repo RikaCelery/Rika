@@ -1,9 +1,9 @@
 package org.celery.command.builtin
 
-import command.controller.CSimpleCommand
 import net.mamoe.mirai.console.command.BuiltInCommands
 import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.command.CommandSender
+import net.mamoe.mirai.console.command.SimpleCommand
 import net.mamoe.mirai.console.command.descriptor.ExperimentalCommandDescriptors
 import net.mamoe.mirai.console.permission.PermitteeId
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
@@ -17,9 +17,11 @@ import org.celery.utils.file.FileTools
 import org.celery.utils.selenium.Selenium
 
 @OptIn(ExperimentalCommandDescriptors::class, ConsoleExperimentalApi::class)
-object HelpCommand : CSimpleCommand(
+object HelpCommand : SimpleCommand(
     Rika, "help", secondaryNames = arrayOf("帮助", "菜单")
 ) {
+    override val prefixOptional: Boolean
+        get() = true
     private val selenium by lazy { Selenium(false) }
 
     @Handler

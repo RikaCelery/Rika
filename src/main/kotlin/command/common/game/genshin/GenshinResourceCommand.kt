@@ -5,22 +5,22 @@ import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.selenium.Selenium
 import org.openqa.selenium.By
 import org.openqa.selenium.Dimension
 import java.io.File
 
-object GenshinResourceCommand : RegexCommand(
-    "今日素材", "^今日素材(.*)".toRegex(),
-    normalUsage = "今日素材",
+object GenshinResourceCommand : Command(
+    "今日素材",
+    usage = "今日素材",
 ) {
     private val selenium by lazy {
         Selenium(false)
     }
     private var imageCache: File? = null
 
-    @Command
+    @Command("^今日素材(.*)")
     suspend fun MessageEvent.on(eventMatchResult: EventMatchResult): ExecutionResult {
         val mode = eventMatchResult[1]
         if (mode == "clear") {

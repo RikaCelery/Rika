@@ -1,4 +1,4 @@
-package org.celery.command.common.temp_pick_moon_cake
+package command.common.funny.temp_pick_moon_cake
 
 import events.ExecutionResult
 import kotlinx.serialization.decodeFromString
@@ -6,20 +6,14 @@ import kotlinx.serialization.encodeToString
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.buildMessageChain
+import net.mamoe.mirai.message.data.content
 import org.celery.command.controller.EventMatchResult
-import org.celery.command.controller.RegexCommand
+import org.celery.command.controller.abs.Command
 import org.celery.utils.sendMessage
 import org.celery.utils.serialization.defaultJson
 import java.util.concurrent.atomic.AtomicBoolean
 
-object PickMoonCake : RegexCommand(
-    "月饼", "^拿月饼\\s*(.*)".toRegex(),
-    secondaryRegexs = arrayOf(Regex("^查月饼")),
-    normalUsage = "拿月饼<月饼名字>\n查月饼: 返回所有月饼"
-) {
-    init {
-        defaultCountLimit = 200
-    }
+object PickMoonCake : Command("月饼", usage = "拿月饼<月饼名字>\n查月饼: 返回所有月饼") {
 
     private val picking = AtomicBoolean(false)
     private val moonCakes: MutableList<Cake>
@@ -44,15 +38,13 @@ object PickMoonCake : RegexCommand(
         val (i, matchResult) = eventMatchResult.getIndexedResult()
         val cakes = moonCakes
         if (i == 1) {
-            sendMessage(
-                buildMessageChain {
-                    cakes.onEach {
-                        +PlainText(it.name + ": " + it.emoji.ifBlank { "\uD83E\uDD6E" }.repeat(it.count) + "\n")
-                    }.ifEmpty {
-                        +PlainText("我草，被拿完了！！！")
-                    }
+            sendMessage(buildMessageChain {
+                cakes.onEach {
+                    +PlainText(it.name + ": " + it.emoji.ifBlank { "\uD83E\uDD6E" }.repeat(it.count) + "\n")
+                }.ifEmpty {
+                    +PlainText("我草，被拿完了！！！")
                 }
-            )
+            })
             return ExecutionResult.Success
         }
         if (picked.contains(sender.id)) {
@@ -69,16 +61,14 @@ object PickMoonCake : RegexCommand(
             return ExecutionResult.LimitCall
         }
         if (cakes.any { it.name.equals(cakeName.trim(), true) }.not()) {
-            sendMessage(
-                buildMessageChain {
-                    +PlainText("我找不见$cakeName！！\n")
-                    cakes.onEach {
-                        +PlainText(it.name + ": " + it.emoji.ifBlank { "\uD83E\uDD6E" }.repeat(it.count) + "\n")
-                    }.ifEmpty {
-                        +PlainText("我草，被拿完了！！！")
-                    }
+            sendMessage(buildMessageChain {
+                +PlainText("我找不见$cakeName！！\n")
+                cakes.onEach {
+                    +PlainText(it.name + ": " + it.emoji.ifBlank { "\uD83E\uDD6E" }.repeat(it.count) + "\n")
+                }.ifEmpty {
+                    +PlainText("我草，被拿完了！！！")
                 }
-            )
+            })
             return ExecutionResult.LimitCall
         }
         val cake = cakes.find { it.name.equals(cakeName.trim(), true) }!!
@@ -102,11 +92,19 @@ object PickMoonCake : RegexCommand(
         getOrCreateDataFile("cakes.json").writeText(defaultJson.encodeToString(cakes))
     }
 
+    @Trigger("handle")
+    fun MessageEvent.match(): EventMatchResult? {
+        if (Regex("^拿月饼\\s*(.*)").matches(message.content)) return EventMatchResult(Regex("^拿月饼\\s*(.*)").find(message.content))
+        if (Regex("^查月饼").matches(message.content)) return EventMatchResult(Regex("^拿月饼\\s*(.*)").find(message.content),
+            index = 1)
+        return null
+    }
+
     @kotlinx.serialization.Serializable
     data class Cake(
         val name: String,
         val emoji: String,
-        val count: Int
+        val count: Int,
     ) {
 
     }

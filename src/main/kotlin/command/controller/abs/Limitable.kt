@@ -222,6 +222,7 @@ interface NEWLimitable {
 
     @OptIn(DelicateCoroutinesApi::class)
     suspend fun temporaryBan(subjectId: Long, userId: Long, millionSeconds: Long) {
+        logger.verbose("NEWLimitable.temporaryBan, args = subjectId = [${subjectId}], userId = [${userId}], millionSeconds = [${millionSeconds}]")
         BanList.set(Key.tempBanId(subjectId,userId,this), true)
         GlobalScope.launch {
             delay(millionSeconds)

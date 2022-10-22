@@ -23,9 +23,7 @@ event -> findMatch( Command.matches(event)!=null ) -> ExecutionEvent -> execute
  */
 object CommandExecutor : SimpleListenerHost() {
     private val logger = MiraiLogger.Factory.create(this::class)
-    private val commands = hashSetOf<EventCommand<*>>()
     private val commands2 = hashSetOf<AbstractCommand>()
-    fun add(c: EventCommand<*>) = commands.add(c)
     fun add(c: AbstractCommand) = commands2.add(c)
 
     val lastMessages = ConcurrentLinkedDeque<MessageEvent>()
@@ -112,6 +110,7 @@ object CommandExecutor : SimpleListenerHost() {
                             )
                         }
                         LimitCall -> {
+                            logger.debug("limit user $userId in subjectId $subjectId ${command.getCooldown()}ms")
                             command.temporaryBan(subjectId, userId, command.getCooldown() * 1L+1)
                         }
                         is Ignored -> {
@@ -124,19 +123,20 @@ object CommandExecutor : SimpleListenerHost() {
                             logger.warning("unknown status, not add.")
                         }
                         Success -> {
+                            logger.debug("executed sucessfully")
                             Coins[userId] -= coin
                             if (Coins[userId] < 0) Coins[userId] = 0
                             command.increaseCount(subjectId, userId)
                         }
                     }
-                    logger.debug("executed sucessfully cost:${System.currentTimeMillis() - start}ms")
+                    logger.debug("time cost:${System.currentTimeMillis() - start}ms")
                 } else
                     logger.warning("${command.commandId} can not use")
                 if (command.blockSub){
                     break
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                logger.error(e)
             }
         }
     }

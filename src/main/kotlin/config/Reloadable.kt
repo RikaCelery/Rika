@@ -218,16 +218,20 @@ abstract class Reloadable(val path: String) {
     private val reloader: Timer = timer("auto-reloader:$path", true, 0, 1000) {
         if (isModified.get()) {
 //            colorln("save change").cyan()
-            try {
-                save()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                reload()
+            synchronized(this@Reloadable::class.java){
+                try {
+                    save()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    reload()
+                }
             }
             return@timer
         }
         if (lastModified != file.lastModified()) {
-            reload()
+            synchronized(this@Reloadable::class.java){
+                reload()
+            }
         }
 
     }

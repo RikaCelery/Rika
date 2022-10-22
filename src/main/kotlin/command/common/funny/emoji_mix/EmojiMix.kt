@@ -46,17 +46,9 @@ object EmojiMix : Command(
                     logger.error(e)
                 }
             }
-        } else try {
-            getMix(e1, e2).let {
-                if (it.isEmpty()) return@let
-                it.toExternalResource().use {
-                    subject.sendMessage(subject.uploadImage(it))
-                }
-                file.writeBytes(it)
-            }
-        } catch (e: Exception) {
+        } else {
             try {
-                getMix(e2, e1).let {
+                getMix(e1, e2).let {
                     if (it.isEmpty()) return@let
                     it.toExternalResource().use {
                         subject.sendMessage(subject.uploadImage(it))
@@ -64,7 +56,17 @@ object EmojiMix : Command(
                     file.writeBytes(it)
                 }
             } catch (e: Exception) {
-                return ExecutionResult.Ignored("表情$result1+$result1,未找到匹配的混合图($fileNamePrefix),已忽略")
+                try {
+                    getMix(e2, e1).let {
+                        if (it.isEmpty()) return@let
+                        it.toExternalResource().use {
+                            subject.sendMessage(subject.uploadImage(it))
+                        }
+                        file.writeBytes(it)
+                    }
+                } catch (e: Exception) {
+                    return ExecutionResult.Ignored("表情$result1+$result1,未找到匹配的混合图($fileNamePrefix),已忽略")
+                }
             }
         }
         return ExecutionResult.Success
