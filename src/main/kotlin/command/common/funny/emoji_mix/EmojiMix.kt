@@ -81,8 +81,7 @@ object EmojiMix : Command(
 
         return HttpUtils.downloader(api)
     }
-
-    private fun getApi(codePoint: Int): Long? {
+    private val map by lazy {
         val map = mutableMapOf<Int, Long>()
         map.put(128516, 20201001) // 😄 grinning face with smiling eyes
         map.put(128512, 20201001) // 😀 grinning face
@@ -275,7 +274,10 @@ object EmojiMix : Command(
         map.put(127820, 20211115) // 🍌 banana
         map.put(127827, 20210831) // 🍓 strawberry
         map.put(127819, 20210521) // 🍋 lemon
-        map.put(127818, 20211115) // 🍊 tangerine orange
+        map.put(127818, 20211115) // 🍊 tangerine orange}
+        map
+    }
+    private fun getApi(codePoint: Int): Long? {
         return map[codePoint]
     }
 
