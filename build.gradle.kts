@@ -22,8 +22,12 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.39.3.0")
     implementation("org.postgresql:postgresql:42.5.0")
     implementation("org.jsoup:jsoup:1.15.3")
+    implementation("net.mamoe.yamlkt:yamlkt:0.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     "shadowLink"(zipTree("lib/opencv-453.jar")) // 告知 mirai-console 在打包插件时包含此依赖；无需包含版本号
     implementation("org.ktorm:ktorm-core:3.5.0")
+    implementation("com.madgag:animated-gif-lib:1.4")
+    implementation("com.squareup:gifencoder:0.10.1")
     implementation("org.ktorm:ktorm-support-sqlite:3.5.0")
     implementation("org.ktorm:ktorm-support-mysql:3.5.0")
     implementation("org.ktorm:ktorm-support-postgresql:3.5.0")

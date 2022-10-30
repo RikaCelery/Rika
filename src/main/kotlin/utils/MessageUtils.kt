@@ -1,7 +1,6 @@
 package org.celery.utils
 
 import net.mamoe.mirai.contact.Contact
-import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.events.GroupMemberEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.Image
@@ -42,4 +41,4 @@ suspend fun InputStream.toImage(subject: Contact): Image {
         subject.uploadImage(it)
     })
 }
-suspend fun User.getAvatar(subject: Contact) = HttpUtils.downloader(this.avatarUrl).toImage(subject)
+suspend fun Contact.getAvatar(subject: Contact) = HttpUtils.downloader(this.avatarUrl).toImage(subject)

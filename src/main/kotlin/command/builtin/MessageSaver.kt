@@ -11,7 +11,7 @@ import org.celery.utils.sql.MessageEventSql
 import kotlin.coroutines.CoroutineContext
 
 object MessageSaver : SimpleListenerHost() {
-    @EventHandler(EventPriority.MONITOR)
+    @EventHandler(EventPriority.LOWEST)
     suspend fun GroupMessageEvent.on(): ListeningStatus {
         if(!MainConfig.saveMessage){
             return ListeningStatus.STOPPED

@@ -8,24 +8,24 @@ import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.utils.MiraiLogger
 import org.celery.Rika
+import org.celery.config.main.PublicConfig
 import org.celery.utils.WeChatQRCodeTool
 import org.celery.utils.http.HttpUtils
 import org.celery.utils.selenium.Selenium
+import kotlin.coroutines.CoroutineContext
 
 class QRCodeDector : SimpleListenerHost() {
     val file by lazy { Rika.resolveDataFile("qr.txt") }
     private val logger by lazy { MiraiLogger.Factory.create(this::class) }
     private val selenium by lazy { Selenium(true) }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     suspend fun MessageEvent.save() {
-        if (subject.id !in listOf(1436898372L))
-            return
 //        println("handle")
         Regex("https://sharechain.qq.com/.*").findAll(message.getTexts().joinToString("")).forEach {
             try {
                 var link = it.value
-                println(link)
+//                println(link)
 
                 if (link.contains("sharechain.qq")) {
                     synchronized(selenium::class.java) {
@@ -92,6 +92,11 @@ class QRCodeDector : SimpleListenerHost() {
                 null
             }
         }
+
+        if (subject.id in PublicConfig["ignore_event_group", listOf<Long>()]) {
+            this.intercept()
+            return
+        }
     }
 
     private fun MessageChain.getImages(): List<Image> {
@@ -147,5 +152,9 @@ class QRCodeDector : SimpleListenerHost() {
         } catch (e: Exception) {
             null
         }
+    }
+
+    override fun handleException(context: CoroutineContext, exception: Throwable) {
+
     }
 }

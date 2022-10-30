@@ -20,4 +20,6 @@ fun randomFloat() = random.nextFloat()
 /**
  * 获取下一个在 [from]（包括）和 [until]（不包括）之间均匀分布的随机Int值。
  */
-fun randomInt(from:Int,until:Int) = random.nextInt(from,until)
+fun randomInt(from:Int,until:Int): Int {
+    return random.nextInt(from,until)
+}

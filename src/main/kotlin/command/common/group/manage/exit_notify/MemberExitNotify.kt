@@ -1,4 +1,4 @@
-package command.common.group.exit_notify
+package command.common.group.manage.exit_notify
 
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.MemberLeaveEvent
@@ -54,7 +54,8 @@ object MemberExitNotify : Command(
 
     @Command
     suspend fun MemberLeaveEvent.Kick.handleInvite() {
-        if (operator == user) return
+
+        if (operator == null) return
         val message = config.getOrDefault(group.simpleStr + ".踢出", defaultKick)
         if (message.isBlank()) return
         sendMessage(

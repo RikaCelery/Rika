@@ -72,3 +72,6 @@ fun getSimilarityRatio(proName1: String, proName2: String): Double {
 fun String.placeholder(vararg replace:Pair<String,Any>): String {
     return StringSubstitutor<String>(replace.toMap().mapValues{ it.value.toString()}, "{", "}",'$',"undefined").replace(this)
 }
+fun String.placeholder(replaces:Iterable<Pair<String,Any>>): String {
+    return StringSubstitutor<String>(replaces.toMap().mapValues{ it.value.toString()}, "{", "}",'$',"undefined").replace(this)
+}

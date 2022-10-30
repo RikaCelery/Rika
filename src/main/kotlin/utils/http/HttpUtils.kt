@@ -321,6 +321,11 @@ object HttpUtils {
             .proxy(Proxy(Proxy.Type.SOCKS, InetSocketAddress(ProxyConfigs.httpClientPort)))
             .retryOnConnectionFailure(true).build()
     }
+
+    fun quit(){
+        clientNoProxy.dispatcher.executorService.shutdownNow()
+        clientProxy.dispatcher.executorService.shutdownNow()
+    }
 }
 
 private fun InputStream.tryread(buffer: ByteArray, depth: Int = 0): Int {

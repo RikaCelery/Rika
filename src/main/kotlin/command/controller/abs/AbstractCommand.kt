@@ -18,7 +18,9 @@ import org.celery.Rika
 import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.abs.AbstractCommand.RequirePermission.*
 import org.celery.config.Reloadable
+import org.celery.config.main.Keys
 import org.celery.config.main.MainConfig
+import org.celery.config.main.PublicConfig
 import org.celery.data.Coins
 import org.celery.utils.file.createParentFolder
 import org.celery.utils.permission.isSuperUser
@@ -54,7 +56,7 @@ abstract class AbstractCommand(
             TODO()
         }
     protected val logger by lazy {
-        MiraiLogger.Factory.create(this::class,"Rika-$commandId")
+        MiraiLogger.Factory.create(this::class, "Rika-$commandId")
     }
     val config by lazy {
         object : Reloadable(Rika.configFolderPath.resolve("plugin-configs").resolve(commandId).toString()) {
@@ -106,25 +108,30 @@ abstract class AbstractCommand(
         return (let as? Pair<ExecutionResult, Int>) ?: (ExecutionResult.Unknown to 0)
     }
 
+    companion object {
+        /**
+         * 拿一个文件
+         */
+        fun getResource(relative: String): File {
+            val file = Rika.dataFolderPath.resolve("resources").resolve(relative).toFile()
+            file.createParentFolder()
+            return file
+        }
 
-    /**
-     * 拿一个文件
-     */
-    fun getResource(relative: String): File {
-        val file = Rika.dataFolderPath.resolve("resources").resolve(relative).toFile()
-        file.createParentFolder()
-        return file
+        /**
+         * 拿一个文件
+         */
+        fun getOrCreateResource(relative: String): File {
+            val file = Rika.dataFolderPath.resolve("resources").resolve(relative).toFile()
+            file.createParentFolder()
+            if (file.exists().not()) file.createNewFile()
+            return file
+        }
     }
 
-    /**
-     * 拿一个文件
-     */
-    fun getOrCreateResource(relative: String): File {
-        val file = Rika.dataFolderPath.resolve("resources").resolve(relative).toFile()
-        file.createParentFolder()
-        if (file.exists().not()) file.createNewFile()
-        return file
-    }
+    val dataFolder: File
+        get() = Rika.dataFolderPath.resolve("plugin-datas").resolve(commandId).toFile()
+            .apply { if (exists().not()) mkdirs() }
 
     /**
      * 拿一个文件
@@ -212,14 +219,18 @@ abstract class AbstractCommand(
                 b
             }
             SUPERUSER -> {
-                this.safeCast<UserEvent>()?.user?.isSuperUser()?:
-                this.safeCast<GroupMemberEvent>()?.user?.isSuperUser()?:
-                this.safeCast<MessageEvent>()?.sender.isSuperUser()
+                this.safeCast<UserEvent>()?.user?.isSuperUser()
+                    ?: this.safeCast<GroupMemberEvent>()?.user?.isSuperUser()
+                    ?: this.safeCast<MessageEvent>()?.sender.isSuperUser()
             }
             else -> {
                 throw IllegalStateException(permission.name)
             }
         }
+    }
+
+    open fun init() {
+        // nothing to init
     }
 
 }
@@ -329,7 +340,12 @@ open class Command(
         for ((matchResult, triggeredFunction, _annotation) in event.getTriggeredFunctions(message)) {
             coin = _annotation.coin
             if (event is MessageEvent) if (coin > Coins[event.sender]) {
-                event.sendMessage("他吗 你原石不够了(%d)！！至少要%d个！".format(Coins[event.sender], coin))
+                event.sendMessage(
+                    PublicConfig[Keys.COINS_NOT_ENOUGH, "他吗 你原石不够了({coins})！！至少要{min}个！"].placeholder(
+                        "coins" to Coins[event.sender],
+                        "min" to coin
+                    )
+                )
                 return ExecutionResult.LimitCall to coin
             }
             val any = try {
@@ -373,13 +389,15 @@ open class Command(
 }
 
 
-object TestCommand : Command(commandId = "name",
+object TestCommand : Command(
+    commandId = "name",
     priority = 5,
     classify = "class1",
     description = "none",
     usage = "none",
     superUserUsage = "none",
-    example = "ss,fff,hhhc,cv") {
+    example = "ss,fff,hhhc,cv"
+) {
     val listOf: List<String>
         get() = listOf("砂糖", "辣辣", "番茄", "派蒙")
     val timer = Timer()
@@ -405,7 +423,7 @@ object TestCommand : Command(commandId = "name",
     suspend fun GroupMessageEvent.run(eventMatchResult: EventMatchResult) {
 
         val s = eventMatchResult[1]
-        if (s in listOf) {
+        if (true) {
             val message1 = StringSubstitutor.replace("\${name}酱可爱捏~", mapOf("name" to s))
             sendMessage(message1)
         }

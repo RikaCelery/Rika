@@ -10,13 +10,13 @@ import command.common.funny.love_generate_electricity.LoveGenerateElectricityAdd
 import command.common.funny.speak_something_shit.SpeakSomeShitAdd
 import command.common.funny.temp_pick_moon_cake.PickMoonCake
 import command.common.game.genshin.GenshinResourceCommand
-import command.common.group.exit_notify.MemberExitNotify
-import command.common.group.exit_notify.MemberExitNotifyControl
 import command.common.group.funny.TalkWithMe
 import command.common.group.funny.banme.Banme
 import command.common.group.funny.marry_member.data.MarryMemberData
 import command.common.group.manage.AdvanceMute
 import command.common.group.manage.KickMember
+import command.common.group.manage.exit_notify.MemberExitNotify
+import command.common.group.manage.exit_notify.MemberExitNotifyControl
 import command.common.tool.github.Github
 import command.common.tool.saucenao.SauceNaoPicSearch
 import command.common.tool.what_anime.WhatAnime
@@ -42,13 +42,16 @@ import org.celery.command.common.funny.emoji_mix.DeleteMix
 import org.celery.command.common.funny.emoji_mix.EmojiMix
 import org.celery.command.common.funny.speak_something_shit.SpeakSomeShit
 import org.celery.command.common.group.funny.WorldCloud
+import org.celery.command.common.group.funny.petpet.plugin.Petpet
 import org.celery.command.common.group.join_welcom.MemberJoinWelcom
 import org.celery.command.common.group.join_welcom.MemberJoinWelcomControl
 import org.celery.command.common.group.mute_notify.BotMuteNotify
 import org.celery.command.common.group.mute_notify.MemberMuteNotify
+import org.celery.command.common.hutao.Hutao
 import org.celery.command.common.nbnhhsh.Nbnhhsh
 import org.celery.command.common.nihongo.Nihongo
 import org.celery.command.controller.CommandExecutor
+import org.celery.command.controller.abs.Command
 import org.celery.command.controller.abs.TestCommand
 import org.celery.config.Reloadable
 import org.celery.config.main.MainConfig
@@ -63,18 +66,19 @@ import org.celery.task.CleanCacheTask
 import org.celery.task.CommandDataAutoSave
 import org.celery.task.HappyNewYearTask
 import org.celery.task.NewTask
+import org.celery.utils.http.HttpUtils
 import org.celery.utils.selenium.Selenium
 import org.celery.utils.task_controller.BotTaskController
+import java.util.concurrent.Executors
 
-object Rika : KotlinPlugin(
-    JvmPluginDescription(
-        id = "org.celery.rika",
-        name = "Rika",
-        version = "0.1.0",
-    ) {
-        author("Celery")
-    }
+object Rika : KotlinPlugin(JvmPluginDescription(
+    id = "org.celery.rika",
+    name = "Rika",
+    version = "0.1.0",
 ) {
+    author("Celery")
+}) {
+    val executors = Executors.newCachedThreadPool()
     val seleniums = mutableListOf<Selenium>()
     const val DEBUG_MODE: Boolean = true
     val allRegisteredCommand2: HashSet<org.celery.command.controller.abs.Command> = hashSetOf()
@@ -106,7 +110,7 @@ object Rika : KotlinPlugin(
         CommandExecutor.registerTo(GlobalEventChannel)
         //builtin commands
         PanicCommand.register()
-        HelpCommand.register()
+        HelpCommand.register(true)
         ConsoleFunctionCallControlEnable.register()
         ConsoleFunctionCallControlDisable.register()
         FunctionCallControl.reg()
@@ -154,6 +158,8 @@ object Rika : KotlinPlugin(
         BotMuteNotify.reg()
         Nihongo.reg()
         Music.reg()
+        Hutao.reg()
+        Petpet.reg()
         QRCodeDector().registerTo(GlobalEventChannel)
         // add task
         BotTaskController.add(CleanCacheTask())
@@ -167,6 +173,8 @@ object Rika : KotlinPlugin(
         }
         //check
         mainCheck()
+        //init plugins
+        allRegisteredCommand2.forEach(Command::init)
         logger.info { "Rika loaded" }
 //        logger.info { "********************************************************" }
 //        logger.warning { "******** TEST START ********" }
@@ -297,6 +305,10 @@ object Rika : KotlinPlugin(
     }
 
     override fun onDisable() {
+        HttpUtils.quit()
+        Reloadable.quit()
+        CommandExecutor.cancelAll()
+        executors.shutdownNow()
         seleniums.forEach(Selenium::quit)
         super.onDisable()
     }

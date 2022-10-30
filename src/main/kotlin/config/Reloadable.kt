@@ -19,6 +19,11 @@ import kotlin.contracts.contract
  */
 abstract class Reloadable(val path: String) {
     companion object {
+        fun quit(){
+            list.forEach {
+                it.reloader.cancel()
+            }
+        }
         val list = mutableListOf<Reloadable>()
     }
 
@@ -180,22 +185,25 @@ abstract class Reloadable(val path: String) {
         }
     }
 
-    @Synchronized
     fun load() {
-        data.clear()
-        data =
-            mapper.readValue<Map<String, Any?>>(file.readText()).filter { it.value != null } as MutableMap<String, Any?>
-        lastModified = file.lastModified()
-        isModified.set(false)
+        synchronized(this::class.java) {
+            data.clear()
+            data =
+                mapper.readValue<Map<String, Any?>>(file.readText())
+                    .filter { it.value != null } as MutableMap<String, Any?>
+            lastModified = file.lastModified()
+            isModified.set(false)
+        }
     }
 
-    @Synchronized
     fun save() {
-        file.writeText(
-            mapper.writeValueAsString(data)
-        )
-        lastModified = file.lastModified()
-        isModified.set(false)
+        synchronized(this::class.java){
+            file.writeText(
+                mapper.writeValueAsString(data)
+            )
+            lastModified = file.lastModified()
+            isModified.set(false)
+        }
     }
 
     /**
@@ -218,20 +226,18 @@ abstract class Reloadable(val path: String) {
     private val reloader: Timer = timer("auto-reloader:$path", true, 0, 1000) {
         if (isModified.get()) {
 //            colorln("save change").cyan()
-            synchronized(this@Reloadable::class.java){
                 try {
                     save()
                 } catch (e: Exception) {
                     e.printStackTrace()
                     reload()
                 }
-            }
+
             return@timer
         }
         if (lastModified != file.lastModified()) {
-            synchronized(this@Reloadable::class.java){
                 reload()
-            }
+
         }
 
     }

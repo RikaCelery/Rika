@@ -13,6 +13,8 @@ import org.celery.command.controller.EventMatchResult
 import org.celery.command.controller.abs.Command
 import org.celery.utils.contact.GroupTools
 import org.celery.utils.permission.isSuperUser
+import org.celery.utils.sendMessage
+import org.celery.utils.strings.placeholder
 
 object KickMember : Command(
     "踢人"
@@ -25,19 +27,26 @@ object KickMember : Command(
         val targetMembers = mutableListOf(targetMember.id).apply {
             addAll(message.filterIsInstance<At>().map { it.target })
         }.toHashSet().mapNotNull { group.members[it] }.filterNot { it == sender }
-        if ((bot as NormalMember).isOwner() && sender.isSuperUser()) {
+        if ((group.botAsMember).isOwner() && sender.isSuperUser()) {
             targetMembers.forEach {
                 it.kick("")
                 delay(1000)
             }
+            sendMessage(config["members_kicked","{members}已经被移除"].placeholder(
+                "members" to targetMembers.joinToString("\n") { it.id.toString()+"\n" }
+            ))
             return ExecutionResult.Success
         } else {
-            targetMembers.filter {
+            val members = targetMembers.filterNot {
                 it.isOperator()
-            }.forEach {
+            }.onEach {
                 it.kick("")
                 delay(1000)
             }
+
+            sendMessage(config["members_kicked","{members}已经被移除"].placeholder(
+                "members" to members.joinToString("\n") { it.id.toString()+"\n" }
+            ))
         }
         targetMember.kick("")
         return ExecutionResult.Success

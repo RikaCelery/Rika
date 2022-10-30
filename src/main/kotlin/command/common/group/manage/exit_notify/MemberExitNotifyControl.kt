@@ -1,4 +1,4 @@
-package command.common.group.exit_notify
+package command.common.group.manage.exit_notify
 
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import org.celery.command.controller.EventMatchResult

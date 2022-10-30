@@ -3,12 +3,12 @@
 package org.celery.utils.task_controller
 
 import net.mamoe.mirai.utils.MiraiLogger
+import org.celery.Rika.executors
 import org.celery.utils.time.TimeConsts
 import org.celery.utils.time.TimeUtils
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.Executors
 
 /**
  * 在指定时刻执行
@@ -78,7 +78,6 @@ abstract class AbstractBotTask(
     }
 
     override fun run() {
-        val executors = Executors.newCachedThreadPool()
         val date = LocalDateTime.now()
 //        logger.debug("now is ${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(date)} trigger = ${isTrigger(date)}")
         if (isTrigger(date)) try {
