@@ -19,7 +19,7 @@ object Processor:ListenerHost, CoroutineScope {
     @EventHandler
     suspend fun listenAll(e: Event){
         PluginManager.plugins.sortedBy { it.priority }.forEach {
-            println(it.call(e))
+            (it.call(e))
         }
     }
     private fun handleException(context: CoroutineContext, exception: Throwable) {

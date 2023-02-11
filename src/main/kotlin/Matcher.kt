@@ -18,7 +18,13 @@ inline fun <T : Event, R, reified E : Event> Matcher<T, R>.checkType(e: E): Bool
         this::class.declaredFunctions.single { it.name == "matches" }
             .parameters[1].type
     val thisClass = e::class.defaultType
-//    println("want: $matcherTargetClass")
-//    println("actually: $thisClass")
-    return thisClass.isSubtypeOf(matcherTargetClass)
+    val subtypeOf = thisClass.isSubtypeOf(matcherTargetClass)
+//    if (subtypeOf) {
+//        println("checkType")
+//    } else {
+//        Rika.logger.debug("type miss match")
+//        println("require: $matcherTargetClass")
+//        println("actually: $thisClass")
+//    }
+    return subtypeOf
 }

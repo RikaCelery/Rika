@@ -14,6 +14,7 @@ object Rika : KotlinPlugin(JvmPluginDescription(
     author("Celery")
 }) {
     override fun onEnable() {
+        Limiter.reload()
         Processor.registerTo(GlobalEventChannel)
         PluginManager.add(Test)
         logger.info { "Rika loaded" }
